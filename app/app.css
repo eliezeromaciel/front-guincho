@@ -13,3 +13,28 @@ body {
     color-scheme: dark;
   }
 } */
+
+.bg-verdeTelaInicial {
+    background-color: #4bb44b;
+  }
+
+.bg-verdeEscuro {
+    background-color: #004d00;
+}
+
+.bg-transparente {
+    background-color: rgba(0,0,0,0) !important
+    ;
+}
+
+.bg-transparenciaPouca {
+    background-color: rgba(0,0,0, 0.2) !important;
+}
+
+.nav-pills li a:hover {
+    background-color: #004d00;
+}
+
+.dropdown-center a:hover {
+    background-color: #004d00;
+}
