@@ -6,6 +6,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { useEffect } from "react";
+
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -13,7 +15,8 @@ import "./app.css";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'
-// import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+
+
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -47,6 +50,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => { // roda o arquivo min.js no lado do navegador, pois useeffect só renderiza no navegador, nunca no lado do servidor. 
+    // @ts-ignore       // diz p typescript ignorar a tipagem do arquivo, pois o arquivo  " implicitly has an 'any' type "
+    import("bootstrap/dist/js/bootstrap.bundle.min.js");
+  
+}, []);
   return <Outlet />;
 }
 
@@ -78,3 +86,5 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     </main>
   );
 }
+
+
