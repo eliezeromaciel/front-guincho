@@ -4,10 +4,12 @@ import {getConsumidores} from '../services/consumidores'
 
 export default function Servicos () {
   
-  const [usuario, setUsuario] = useState <string[]> ([]); 
-  const [clientes, setClientes] = useState <string []> ([])  
-  const [clientesFiltrados, setClientesFiltrados] = useState <string []> ([])
+  const [clientes, setClientes] = useState <object []> ([])  
+  const [clientesFiltrados, setClientesFiltrados] = useState <object []> ([])
   const [inputNomeCliente, setInputNomeCliente] = useState ('')
+
+  const [quemRecebe, setQuemRecebe] = useState <string > ('') 
+  const [listaQuemRecebe, setListaQuemRecebe] = useState < string[] > ([])
 
   const handleChangeInputNome =  (e: any) => { 
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
@@ -17,9 +19,18 @@ export default function Servicos () {
     setClientesFiltrados(filtraClientes)
   }
 
+  const handleChooseQuemRecebe = () => {
+    setListaQuemRecebe(['Daniel', 'Gabriel'])
+  }
+
   const handleClienteSelected = (elem: any) => {
     setInputNomeCliente(elem)
     setClientesFiltrados([])
+  }
+
+  const handleQuemRecebeSelected = (elem: any) => {
+    setQuemRecebe(elem)
+    setListaQuemRecebe([])
   }
   
   const loadClientes = async () => {
@@ -50,7 +61,7 @@ export default function Servicos () {
                   type="text"
                   name="cliente" 
                   placeholder="Cliente"
-                  // maxLength="30"
+                  maxLength={30}
                   required 
                   value={inputNomeCliente}
                   onChange={handleChangeInputNome}
@@ -84,7 +95,7 @@ export default function Servicos () {
                   type="text"
                   name="veiculo" 
                   placeholder="veículo"
-                  // maxLength="300"
+                  maxLength={30}
                   required 
                 />
               </div> 
@@ -96,10 +107,11 @@ export default function Servicos () {
                   type="number"
                   name="valorCobrado" 
                   placeholder="Valor cobrado"
-                  // maxLength="300"
+                  maxLength={7}
                   required 
                 />
               </div>       
+
 
               {/* quem receberá valor */}
               <div className="mb-3">
@@ -107,11 +119,36 @@ export default function Servicos () {
                   className="form-control" 
                   type="text"
                   name="quemRecebe" 
-                  placeholder="Quem receberá o valor"
-                  // maxLength="300"
+                  placeholder="Quem Receberá"
+                  maxLength={30}
                   required 
+                  defaultValue={quemRecebe} // era value, mas troquei por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+                  onClick={handleChooseQuemRecebe}
+                  // onChange={handleChangeInputNome}
+                  // onBlur={() => setTimeout(() => setClientesFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
                 />
-              </div> 
+
+                <ul className='list-group position-absolute shadow'
+                  style={{ zIndex: 1000 }}    
+                >
+                  { listaQuemRecebe.length>0 ?  (listaQuemRecebe.map( (elem: any , index) => {
+                    return (
+                      <li 
+                        key={index}
+                        className='list-group-item list-group-item-action'
+                        style={{ cursor: 'pointer' }}
+                        onClick={ () => { 
+                          handleQuemRecebeSelected(elem)
+                        }}
+                      >
+                        {elem}
+                      </li>
+                    )
+                  })) : null}
+                </ul>
+
+
+              </div>
 
               {/* endereço para retirada */}
               <div className="mb-3">
@@ -120,7 +157,7 @@ export default function Servicos () {
                   type="text"
                   name="enderecoRetirada" 
                   placeholder="Endereço para retirada"
-                  // maxLength="300"
+                  maxLength={300}
                   required 
                 />
               </div>   
@@ -132,7 +169,7 @@ export default function Servicos () {
                   type="text"
                   name="enderecoEntrega" 
                   placeholder="Endereço de entrega"
-                  // maxLength="300"
+                  maxLength={300}
                   required 
                 />
               </div>     
