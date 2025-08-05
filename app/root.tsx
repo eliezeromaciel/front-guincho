@@ -7,15 +7,15 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { useEffect } from "react";
-
-
 import type { Route } from "./+types/root";
-import "./app.css";
+import OffCanvas from "./components/offcanvas/offcanvas";
+
 
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import OffCanvas from "./components/offcanvas/offcanvas";
+import "./app.css";
+
 
 
 
