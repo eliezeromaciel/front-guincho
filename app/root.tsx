@@ -15,6 +15,7 @@ import "./app.css";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import OffCanvas from "./components/offcanvas/offcanvas";
 
 
 
@@ -55,7 +56,12 @@ export default function App() {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   
 }, []);
-  return <Outlet />;
+  return (
+    <>
+      <OffCanvas/>
+      <Outlet />
+    </>
+);
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
