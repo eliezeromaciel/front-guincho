@@ -49,8 +49,8 @@ export default function Servicos () {
     <div className="container mt-4">
       <div className="row justify-content-center">
         <div className="col-md-6">
-          <div className="border border-secondary p-4 rounded">
-            <h3 className="text-secondary mb-3">Novo Serviço</h3>
+          <div className="border border-secondary  p-4 rounded">
+            <h3 className="d-flex justify-content-center text-secondary mb-3 ">Novo Serviço</h3>
 
             <form className="needs-validation" noValidate>
 
@@ -104,10 +104,10 @@ export default function Servicos () {
               <div className="mb-3">
                 <input 
                   className="form-control" 
-                  type="number"
+                  type="text"
                   name="valorCobrado" 
                   placeholder="Valor cobrado"
-                  maxLength={7}
+                  maxLength={4}
                   required 
                 />
               </div>       
@@ -122,10 +122,10 @@ export default function Servicos () {
                   placeholder="Quem Receberá"
                   maxLength={30}
                   required 
-                  defaultValue={quemRecebe} // era value, mas troquei por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+                  defaultValue={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
                   onClick={handleChooseQuemRecebe}
                   // onChange={handleChangeInputNome}
-                  // onBlur={() => setTimeout(() => setClientesFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
+                  onBlur={() => setTimeout(() => setListaQuemRecebe([]), 200)} 
                 />
 
                 <ul className='list-group position-absolute shadow'
