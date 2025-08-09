@@ -3,10 +3,10 @@ import {useState} from 'react'
 
 const Clientes = () => {
   
-  const [telefone, setTelefone] = useState('')
+  const [telefone, setTelefone] = useState <string> ('')
   
-  const formatPhoneNumber = (value: any) => {
-    const phoneNumber = value.replace(/\D/g, '') // Remove tudo que não for número
+  const formatPhoneNumber = (value: string) => {
+    const phoneNumber :string = value.replace(/\D/g, '') // Remove tudo que não for número
 
     if (phoneNumber.length === 0) return '' // Permite apagar o campo
 
@@ -18,9 +18,9 @@ const Clientes = () => {
   }
 
   
-  const handlePhoneChange = (event: any) => {
-    const rawValue = event.target.value 
-    const formatted = formatPhoneNumber(rawValue)
+  const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue: string = event.target.value 
+    const formatted: string = formatPhoneNumber(rawValue)
     setTelefone(formatted)
   }
 
