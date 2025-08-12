@@ -54,8 +54,7 @@ export default function App() {
   useEffect(() => { // roda o arquivo min.js no lado do navegador, pois useeffect só renderiza no navegador, nunca no lado do servidor. 
     // @ts-ignore       // diz p typescript ignorar a tipagem do arquivo, pois o arquivo  " implicitly has an 'any' type "
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
-  
-}, []);
+  }, []);
   return (
     <>
       <OffCanvas/>

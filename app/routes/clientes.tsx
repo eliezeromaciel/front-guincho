@@ -30,23 +30,34 @@ const Clientes = () => {
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="border border-secondary p-4 rounded">
-            <h3 className="text-secondary mb-3">Novo Cliente</h3>
+            <h3 className="text-secondary mb-3">Cadastro de Cliente</h3>
 
             <form className="needs-validation" noValidate>
 
-              {/* nome */}
+              {/* nome label */}
+              <div className="mb-3">
+                    <h6>Nome Completo:</h6>
+              </div>
+
+              {/* nome input */}
               <div className="mb-3">
                 <input 
                   className="form-control" 
                   type="text"
                   name="nome" 
-                  placeholder="Nome"
+                  placeholder="Ex.: Denis Silva de Sousa"
                   maxLength={30}
                   required 
                 />
               </div>
 
-              {/* telefone */}
+              
+              {/* telefone label*/}
+              <div className="mb-3">
+                    <h6>Telefone:</h6>
+              </div>
+
+              {/* telefone input  */}
               <div className="mb-3">
                 <div className="input-group">
                   <span className="input-group-text">+55</span>
@@ -54,7 +65,7 @@ const Clientes = () => {
                     className="form-control" 
                     type="text"
                     name="telefone" 
-                    placeholder="Telefone"
+                    placeholder="(51)99864-7511"
                     value={telefone}
                     onChange={handlePhoneChange}
                     maxLength={15}
@@ -63,15 +74,18 @@ const Clientes = () => {
                 </div>
               </div>
             
-
+              {/* Endereço label*/}
+              <div className="mb-3">
+                    <h6>Endereço:</h6>
+              </div>
             
-              {/* nome */}
+              {/* Endereço input */}
               <div className="mb-3">
                 <input 
                   className="form-control" 
                   type="text"
                   name="nome" 
-                  placeholder="Endereço padrão de entrega"
+                  placeholder="Rua José Bonifário, 1345, São Leopoldo"
                   maxLength={30}
                   required 
                 />

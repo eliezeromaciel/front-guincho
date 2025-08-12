@@ -121,12 +121,17 @@ export default function Servicos () {
                   name="quemRecebe" 
                   placeholder="Quem Receberá"
                   maxLength={30}
+                  list="browsers"
                   required 
                   defaultValue={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
                   onClick={handleChooseQuemRecebe}
                   // onChange={handleChangeInputNome}
                   onBlur={() => setTimeout(() => setListaQuemRecebe([]), 200)} 
                 />
+                <datalist id="browsers">
+                    <option value="Daniel" />
+                    <option value="Gabriel" />
+                </datalist>
 
                 <ul className='list-group position-absolute shadow'
                   style={{ zIndex: 1000 }}    
