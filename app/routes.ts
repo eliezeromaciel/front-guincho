@@ -5,4 +5,6 @@ export default [
     route('/settings', 'routes/settings.tsx'),
     route('/servicos', 'routes/servicos.tsx'),
     route('/clientes', 'routes/clientes.tsx'),
+    route('/veiculos', 'routes/veiculos.tsx'),
+
 ] satisfies RouteConfig;

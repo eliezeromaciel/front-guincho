@@ -1,13 +1,15 @@
-import api from './api'
+import { collection, getDocs, addDoc, deleteDoc, doc , QuerySnapshot} from "firebase/firestore";
+import { db } from '~/services/firebase'
 
-export const getConsumidores = async ( ) => {
-  // const resp = await api.get('/consumidores')
-  const resp = {data: [{nome: 'mecanica Jorge'}, {nome: 'Flavinho auto'}]}  // simulei resposta da api
-  console.log(resp)
-  return resp
+
+export const getClientes = async () => {
+  try {
+    const snapshot: QuerySnapshot =  await getDocs(collection(db, "clientes"));
+    return (snapshot.docs.map( (elem) => elem.data() ))
+  } catch (error) {
+    console.log(`${error} =====>>>> ERRO AO BUSCAR CLIENTES`)
+  }
+  return []
 }
 
-// export const getConsumidorById = async ({idCliente}: any ) => {
-//   const resp = await api.get(`/consumidor/${idCliente}`)
-//   return resp
-// }
+

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 
-import {getConsumidores} from '../services/consumidores'
+import { getClientes} from '../services/consumidores'
 
 export default function Servicos () {
   
-  const [clientes, setClientes] = useState <object []> ([])  
+  const [clientes, setClientes] = useState <object []>  ([])  
   const [clientesFiltrados, setClientesFiltrados] = useState <object []> ([])
   const [inputNomeCliente, setInputNomeCliente] = useState ('')
 
@@ -14,8 +14,10 @@ export default function Servicos () {
   const handleChangeInputNome =  (e: any) => { 
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
     const valorLowerCase: string = valor.toLowerCase()
+    console.log(valorLowerCase)
     setInputNomeCliente(valor)    // então, dou este valor do onchange para o state 
-    const filtraClientes = clientes.filter ( ( elem: any ) => elem.nome.toLowerCase().includes(valorLowerCase))
+    const filtraClientes = clientes.filter( ( elem: any ) => elem.NOME.toLowerCase().includes(valorLowerCase))
+    console.log(`clientes.filter ===>>> ${filtraClientes}`)
     setClientesFiltrados(filtraClientes)
   }
 
@@ -34,8 +36,8 @@ export default function Servicos () {
   }
   
   const loadClientes = async () => {
-    const consumidores = await getConsumidores() // consumidores recebe .data {array de objetos}
-    setClientes(consumidores.data)
+    const consumidores = await getClientes() // consumidores recebe .data {array de objetos}
+    setClientes(consumidores)
   }
 
   useEffect ( ()=> {
@@ -77,10 +79,10 @@ export default function Servicos () {
                         className='list-group-item list-group-item-action'
                         style={{ cursor: 'pointer' }}
                         onClick={ () => { 
-                          handleClienteSelected(elem.nome)
+                          handleClienteSelected(elem.NOME)
                         }}
                       >
-                        {elem.nome}
+                        {elem.NOME}
                       </li>
                       
                     )
@@ -181,7 +183,7 @@ export default function Servicos () {
 
               
               <div className="d-grid">
-                <button type="submit" className="btn btn-primary">
+                <button type="button" className="btn btn-primary">
                   Criar
                 </button>
               </div>

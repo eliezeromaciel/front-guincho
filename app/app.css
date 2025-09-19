@@ -1,40 +1,35 @@
-/* @import "tailwindcss";
-
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+/* RESET */
+* {
+    margin: 0px;
+    padding: 0px;
+    font-family: "Heebo", sans-serif;
+    color: #858585
 }
-
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
-} */
-
+.bg-cinzaClaro {
+    color: #858585 !important}
+.bg-cinzaEscuro {
+    background-color: #202942;
+}
+.bg-azulClaro {
+    background-color: #4ac4f3;
+}
 .bg-verdeTelaInicial {
     background-color: #4bb44b;
   }
-
 .bg-verdeEscuro {
     background-color: #004d00;
 }
-
 .bg-transparente {
     background-color: rgba(0,0,0,0) !important
     ;
 }
-
 .bg-transparenciaPouca {
     background-color: rgba(0,0,0, 0.2) !important;
 }
-
 .nav-pills li a:hover {
     background-color: #004d00;
 }
-
 .dropdown-center a:hover {
     background-color: #004d00;
 }
+
