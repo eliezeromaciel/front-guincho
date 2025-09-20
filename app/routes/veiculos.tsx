@@ -14,6 +14,9 @@ const Veiculos = () => {
   
   const cadastraVeiculo = async () => {
     postVeiculo(placa, modelo, cor )
+    setPlaca('')
+    setModelo('')
+    setCor('')
   }
 
   return (
