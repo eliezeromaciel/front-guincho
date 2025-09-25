@@ -10,7 +10,32 @@ const Veiculos = () => {
   const [modelo, setModelo] = useState<string>('')
   const [cor, setCor] = useState<string>('')
 
+  const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement> ) => {
+    let valor: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")  // remove caracteres que nao sao numeros ou letras
+    if (valor.length > 7) valor = valor.slice(0, 7); // limita a 7 chars
 
+    // Valida posição por posição
+    const padraoMercosul = [
+      /^[A-Z]$/,       // 1ª letra
+      /^[A-Z]$/,       // 2ª letra
+      /^[A-Z]$/,       // 3ª letra
+      /^[0-9]$/,       // 4º número
+      /^[A-Z0-9]$/,    // 5º letra ou número
+      /^[0-9]$/,       // 6º número
+      /^[0-9]$/,       // 7º número
+    ];
+
+    let validValue = "";
+    for (let i = 0; i < valor.length; i++) {
+      if (padraoMercosul[i].test(valor[i])) {
+        validValue += valor[i];
+      } else {
+        break; // se for inválido, para e não adiciona
+      }
+    }
+    
+    setPlaca(validValue);
+  }
   
   const cadastraVeiculo = async () => {
     postVeiculo(placa, modelo, cor )
@@ -18,6 +43,8 @@ const Veiculos = () => {
     setModelo('')
     setCor('')
   }
+
+
 
   return (
     <div className="container mt-4">
@@ -30,7 +57,7 @@ const Veiculos = () => {
 
               {/* placa label */}
               <div className="mb-3">
-                <h6>Placa:</h6>
+                <h6>Placa:</h6> 
               </div>
 
               {/* placa input */}
@@ -42,7 +69,9 @@ const Veiculos = () => {
                   placeholder="ex: ABC-0123"
                   maxLength={30}
                   value={placa}
-                  onChange={(e) => setPlaca(e.target.value)}
+                  // onChange={(e) => setPlaca(e.target.value)}
+                  onChange={handlePlacaChange}
+
                   required
                 />
               </div>
