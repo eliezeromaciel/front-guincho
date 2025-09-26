@@ -53,7 +53,12 @@ const Veiculos = () => {
           <div className="border border-secondary p-4 rounded">
             <h3 className="text-secondary mb-3">Cadastro de Veículos</h3>
 
-            <form className="needs-validation" noValidate>
+            <form className="needs-validation" 
+              onSubmit={ (e) => {
+                  e.preventDefault()
+                  cadastraVeiculo()
+                }}
+            >
 
               {/* placa label */}
               <div className="mb-3">
@@ -69,9 +74,7 @@ const Veiculos = () => {
                   placeholder="ex: ABC-0123"
                   maxLength={30}
                   value={placa}
-                  // onChange={(e) => setPlaca(e.target.value)}
                   onChange={handlePlacaChange}
-
                   required
                 />
               </div>
@@ -108,7 +111,7 @@ const Veiculos = () => {
                   type="text"
                   name="cor"
                   placeholder="ex: azul escuro"
-                  maxLength={30}
+                  maxLength={20}
                   value={cor}
                   onChange={(e) => setCor(e.target.value)}
                   required
@@ -117,7 +120,7 @@ const Veiculos = () => {
 
 
               <div className="d-grid">
-                <button type="button" className="btn btn-primary" onClick={cadastraVeiculo}>
+                <button type="submit" className="btn btn-primary" >
                   Criar
                 </button>
               </div>
