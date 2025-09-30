@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { db } from '~/services/firebase'
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { postCliente } from '~/services/clientes'
 
 
 
 const Clientes = () => {
 
   const [telefone, setTelefone] = useState<string>('')
+  const [nome, setNome] = useState<string>('')
+  const [endereco, setEndereco] = useState<string>('')
 
   const formatPhoneNumber = (value: string) => {
     const phoneNumber: string = value.replace(/\D/g, '') // Remove tudo que não for número
@@ -28,16 +29,15 @@ const Clientes = () => {
   }
 
   const cadastraCliente = async () => {
-    try {
-      await
-        addDoc(collection(db, "clientes"), {
-          NOME: "Beth",
-          EMAIL: "Beth@email.com",
-        });
-        alert ( 'nome e email cadastrados com sucesso')
-    } catch (error) {
-      console.log(error)
+    if (telefone.length == 15) {
+      postCliente(telefone,nome, endereco)
+      setTelefone('')
+      setNome('')
+      setEndereco('')
+    } else {
+      alert (`O telefone do cliente não está completo`)
     }
+
   }
 
   return (
@@ -47,7 +47,12 @@ const Clientes = () => {
           <div className="border border-secondary p-4 rounded">
             <h3 className="text-secondary mb-3">Cadastro de Cliente</h3>
 
-            <form className="needs-validation" noValidate>
+            <form className="needs-validation"
+             onSubmit={ (e) => {
+                  e.preventDefault()
+                  cadastraCliente()
+                }}
+            >
 
               {/* nome label */}
               <div className="mb-3">
@@ -62,6 +67,8 @@ const Clientes = () => {
                   name="nome"
                   placeholder="Ex.: Denis Silva de Sousa"
                   maxLength={30}
+                  value={nome}
+                  onChange={(e) => {setNome(e.target.value)}}
                   required
                 />
               </div>
@@ -101,14 +108,16 @@ const Clientes = () => {
                   type="text"
                   name="nome"
                   placeholder="Rua José Bonifário, 1345, São Leopoldo"
-                  maxLength={30}
+                  maxLength={80}
+                  value={endereco}
+                  onChange={ (e) => {setEndereco(e.target.value) }}
                   required
                 />
               </div>
 
 
               <div className="d-grid">
-                <button type="button" className="btn btn-primary" onClick={cadastraCliente}>
+                <button type="submit" className="btn btn-primary">
                   Criar
                 </button>
               </div>
