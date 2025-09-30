@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { getClientes} from '../services/consumidores'
+import { getClientes} from '../services/clientes'
 
 export default function Servicos () {
   
