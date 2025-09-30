@@ -44,7 +44,7 @@ const Veiculos = () => {
       setModelo('')
       setCor('')
     } else {
-      alert (`placa nao está completa, faltam ${7 - placa.length} caracteres.`)
+      alert (`A placa do veículo não está completa.`)
     }
   }
 
