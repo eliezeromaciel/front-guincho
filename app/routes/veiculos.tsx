@@ -38,10 +38,14 @@ const Veiculos = () => {
   }
   
   const cadastraVeiculo = async () => {
-    postVeiculo(placa, modelo, cor )
-    setPlaca('')
-    setModelo('')
-    setCor('')
+    if (placa.length == 7) {
+      postVeiculo(placa, modelo, cor )
+      setPlaca('')
+      setModelo('')
+      setCor('')
+    } else {
+      alert (`placa nao está completa, faltam ${7 - placa.length} caracteres.`)
+    }
   }
 
 
