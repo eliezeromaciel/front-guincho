@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
 
-import { getClientes} from '../services/clientes'
+import { getClientes } from '../services/clientes'
 
-export default function Servicos () {
-  
-  const [clientes, setClientes] = useState <object []>  ([])  
-  const [clientesFiltrados, setClientesFiltrados] = useState <object []> ([])
-  const [inputNomeCliente, setInputNomeCliente] = useState ('')
+export default function Servicos() {
 
-  const [quemRecebe, setQuemRecebe] = useState <string > ('') 
-  const [listaQuemRecebe, setListaQuemRecebe] = useState < string[] > ([])
+  const [clientes, setClientes] = useState<object[]>([])
+  const [clientesFiltrados, setClientesFiltrados] = useState<object[]>([])
+  const [inputNomeCliente, setInputNomeCliente] = useState('')
+  const [quemRecebe, setQuemRecebe] = useState<string>('')
+  const [listaQuemRecebe, setListaQuemRecebe] = useState<string[]>([])
+  const [placa, setPlaca] = useState <string> ('')
 
-  const handleChangeInputNome =  (e: any) => { 
+
+  const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
     const valorLowerCase: string = valor.toLowerCase()
     console.log(valorLowerCase)
     setInputNomeCliente(valor)    // então, dou este valor do onchange para o state 
-    const filtraClientes = clientes.filter( ( elem: any ) => elem.NOME.toLowerCase().includes(valorLowerCase))
+    const filtraClientes = clientes.filter((elem: any) => elem.NOME.toLowerCase().includes(valorLowerCase))
     console.log(`clientes.filter ===>>> ${filtraClientes}`)
     setClientesFiltrados(filtraClientes)
   }
@@ -34,117 +35,146 @@ export default function Servicos () {
     setQuemRecebe(elem)
     setListaQuemRecebe([])
   }
-  
+
   const loadClientes = async () => {
     const consumidores = await getClientes() // consumidores recebe .data {array de objetos}
     setClientes(consumidores)
   }
 
-  useEffect ( ()=> {
+  useEffect(() => {
     if (clientes.length === 0)
       loadClientes()
     console.log('executou useeffect ')
   }, [clientes])
 
+  const cadastraServico = () => {
 
-    return (
+
+  }
+
+  return (
     <div className="container mt-4">
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="border border-secondary  p-4 rounded">
             <h3 className="d-flex justify-content-center text-secondary mb-3 ">Novo Serviço</h3>
 
-            <form className="needs-validation" noValidate>
+            <form className="needs-validation"
+              onSubmit={(e) => {
+                e.preventDefault()
+                cadastraServico()
+              }}
+            >
+
+              {/* cliente label */}
+              <div className="mb-3">
+                <h6>Nome Completo:</h6>
+              </div>
 
               {/* cliente */}
               <div className="mb-3">
-                <input 
-                  className="form-control" 
+                <input
+                  className="form-control"
                   type="text"
-                  name="cliente" 
-                  placeholder="Cliente"
+                  name="cliente"
+                  placeholder="ex: Érico Veríssimo"
                   maxLength={30}
-                  required 
+                  required
                   value={inputNomeCliente}
                   onChange={handleChangeInputNome}
                   onBlur={() => setTimeout(() => setClientesFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
                 />
                 <ul className='list-group position-absolute shadow'
-                  style={{ zIndex: 1000 }}    
+                  style={{ zIndex: 1000 }}
                 >
-                  { clientesFiltrados.length>0 ?  (clientesFiltrados.map( (elem: any , index) => {
+                  {clientesFiltrados.length > 0 ? (clientesFiltrados.map((elem: any, index) => {
                     return (
-                      <li 
+                      <li
                         key={index}
                         className='list-group-item list-group-item-action'
                         style={{ cursor: 'pointer' }}
-                        onClick={ () => { 
+                        onClick={() => {
                           handleClienteSelected(elem.NOME)
                         }}
                       >
                         {elem.NOME}
                       </li>
-                      
+
                     )
                   })) : null}
                 </ul>
               </div>
 
-              {/* veículo */}
+              {/* placa veículo label */}
               <div className="mb-3">
-                <input 
-                  className="form-control" 
+                <h6>Placa do veículo:</h6>
+              </div>
+
+              {/* placa veículo */}
+              <div className="mb-3">
+                <input
+                  className="form-control"
                   type="text"
-                  name="veiculo" 
-                  placeholder="veículo"
-                  maxLength={30}
-                  required 
+                  name="veiculo"
+                  placeholder="ex: ABC-8K25"
+                  maxLength={7}
+                  value={placa}
+                  required
                 />
-              </div> 
-               
+              </div>
+
+              {/* valor cobrado label */}
+              <div className="mb-3">
+                <h6>Valor Cobrado:</h6>
+              </div>
+
               {/* valor cobrado */}
               <div className="mb-3">
-                <input 
-                  className="form-control" 
+                <input
+                  className="form-control"
                   type="text"
-                  name="valorCobrado" 
-                  placeholder="Valor cobrado"
+                  name="valorCobrado"
+                  placeholder="ex: 200,00"
                   maxLength={4}
-                  required 
+                  required
                 />
-              </div>       
+              </div>
 
-
-              {/* quem receberá valor */}
+              {/* recebedor label */}
               <div className="mb-3">
-                <input 
-                  className="form-control" 
+                <h6>Quem receberá valor:</h6>
+              </div>
+
+              {/* recebedor valor */}
+              <div className="mb-3">
+                <input
+                  className="form-control"
                   type="text"
-                  name="quemRecebe" 
-                  placeholder="Quem Receberá"
+                  name="quemRecebe"
+                  placeholder="clique para escolher"
                   maxLength={30}
                   list="browsers"
-                  required 
+                  required
                   defaultValue={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
                   onClick={handleChooseQuemRecebe}
                   // onChange={handleChangeInputNome}
-                  onBlur={() => setTimeout(() => setListaQuemRecebe([]), 200)} 
+                  onBlur={() => setTimeout(() => setListaQuemRecebe([]), 200)}
                 />
                 <datalist id="browsers">
-                    <option value="Daniel" />
-                    <option value="Gabriel" />
+                  <option value="Daniel" />
+                  <option value="Gabriel" />
                 </datalist>
 
                 <ul className='list-group position-absolute shadow'
-                  style={{ zIndex: 1000 }}    
+                  style={{ zIndex: 1000 }}
                 >
-                  { listaQuemRecebe.length>0 ?  (listaQuemRecebe.map( (elem: any , index) => {
+                  {listaQuemRecebe.length > 0 ? (listaQuemRecebe.map((elem: any, index) => {
                     return (
-                      <li 
+                      <li
                         key={index}
                         className='list-group-item list-group-item-action'
                         style={{ cursor: 'pointer' }}
-                        onClick={ () => { 
+                        onClick={() => {
                           handleQuemRecebeSelected(elem)
                         }}
                       >
@@ -153,46 +183,54 @@ export default function Servicos () {
                     )
                   })) : null}
                 </ul>
+              </div>
 
-
+              {/* endereço retirada label */}
+              <div className="mb-3">
+                <h6>Endereço para Retirada:</h6>
               </div>
 
               {/* endereço para retirada */}
               <div className="mb-3">
-                <input 
-                  className="form-control" 
+                <input
+                  className="form-control"
                   type="text"
-                  name="enderecoRetirada" 
-                  placeholder="Endereço para retirada"
+                  name="enderecoRetirada"
+                  placeholder="ex: Rua Camaleão, 345, bairro Jardim, Porto Alegre"
                   maxLength={300}
-                  required 
+                  required
                 />
-              </div>   
+              </div>
+
+              {/* endereço de entrega label */}
+              <div className="mb-3">
+                <h6>Endereço de Entrega:</h6>
+              </div>
 
               {/* endereço de entrega */}
               <div className="mb-3">
-                <input 
-                  className="form-control" 
+                <input
+                  className="form-control"
                   type="text"
-                  name="enderecoEntrega" 
-                  placeholder="Endereço de entrega"
+                  name="enderecoEntrega"
+                  placeholder="ex: Av. Indústrias, 79, centro, São Leopoldo"
                   maxLength={300}
-                  required 
+                  required
                 />
-              </div>     
+              </div>
 
-              
+
               <div className="d-grid">
-                <button type="button" className="btn btn-primary">
+                <button type="submit" className="btn btn-primary">
                   Criar
                 </button>
               </div>
-              
+
             </form>
 
           </div>
         </div>
       </div>
     </div>
-    )
+  )
 }
