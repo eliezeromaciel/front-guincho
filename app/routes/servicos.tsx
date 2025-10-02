@@ -15,7 +15,6 @@ export default function Servicos() {
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
     const valorLowerCase: string = valor.toLowerCase()
-    console.log(valorLowerCase)
     setInputNomeCliente(valor)    // então, dou este valor do onchange para o state 
     const filtraClientes = clientes.filter((elem: any) => elem.nome.toLowerCase().includes(valorLowerCase))
     setClientesFiltrados(filtraClientes)
