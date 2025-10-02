@@ -17,8 +17,7 @@ export default function Servicos() {
     const valorLowerCase: string = valor.toLowerCase()
     console.log(valorLowerCase)
     setInputNomeCliente(valor)    // então, dou este valor do onchange para o state 
-    const filtraClientes = clientes.filter((elem: any) => elem.NOME.toLowerCase().includes(valorLowerCase))
-    console.log(`clientes.filter ===>>> ${filtraClientes}`)
+    const filtraClientes = clientes.filter((elem: any) => elem.nome.toLowerCase().includes(valorLowerCase))
     setClientesFiltrados(filtraClientes)
   }
 
@@ -44,7 +43,6 @@ export default function Servicos() {
   useEffect(() => {
     if (clientes.length === 0)
       loadClientes()
-    console.log('executou useeffect ')
   }, [clientes])
 
   const cadastraServico = () => {
@@ -94,10 +92,10 @@ export default function Servicos() {
                         className='list-group-item list-group-item-action'
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
-                          handleClienteSelected(elem.NOME)
+                          handleClienteSelected(elem.nome)
                         }}
                       >
-                        {elem.NOME}
+                        {elem.nome}
                       </li>
 
                     )
