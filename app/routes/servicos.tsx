@@ -39,8 +39,9 @@ export default function Servicos() {
     setClientesFiltrados([])
   }
 
-  const handlePlacaSelected = (elem: object) => {
-
+  const handlePlacaSelected = (elem: any) => {
+    setInputPlaca(elem)
+    setPlacasFiltradas([])
   }
 
   const handleQuemRecebeSelected = (elem: any) => {
