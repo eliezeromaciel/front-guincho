@@ -25,6 +25,7 @@ export const postCliente = async (phone: string, name: string, adress: string) =
       console.log(docRef)
 
     } catch (error) {
+      alert (`Erro ao cadastrar novo cliente`)
       console.log(error)
     }
   }

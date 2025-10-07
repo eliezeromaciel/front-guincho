@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { getClientes } from '../services/clientes'
+import { getVeiculos } from "~/services/veiculos";
 
 export default function Servicos() {
 
@@ -9,8 +10,9 @@ export default function Servicos() {
   const [inputNomeCliente, setInputNomeCliente] = useState('')
   const [quemRecebe, setQuemRecebe] = useState<string>('')
   const [listaQuemRecebe, setListaQuemRecebe] = useState<string[]>([])
-  const [placa, setPlaca] = useState <string> ('')
-
+  const [placas, setPlacas] = useState <object[]> ([])
+  const [inputPlaca, setInputPlaca] = useState <string> ('')
+  const [placasFiltradas, setPlacasFiltradas] = useState <object[]> ([])
 
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
@@ -18,6 +20,14 @@ export default function Servicos() {
     setInputNomeCliente(valor)    // então, dou este valor do onchange para o state 
     const filtraClientes = clientes.filter((elem: any) => elem.nome.toLowerCase().includes(valorLowerCase))
     setClientesFiltrados(filtraClientes)
+  }
+
+  const handleChangeInputPlaca = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor: string = e.target.value
+    const valorUpperCase: string = valor.toUpperCase()
+    setInputPlaca(valor)
+    const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(valorUpperCase))
+    setPlacasFiltradas(filtraPlacas)
   }
 
   const handleChooseQuemRecebe = () => {
@@ -29,20 +39,37 @@ export default function Servicos() {
     setClientesFiltrados([])
   }
 
+  const handlePlacaSelected = (elem: object) => {
+
+  }
+
   const handleQuemRecebeSelected = (elem: any) => {
     setQuemRecebe(elem)
     setListaQuemRecebe([])
   }
 
   const loadClientes = async () => {
-    const consumidores = await getClientes() // consumidores recebe .data {array de objetos}
-    setClientes(consumidores)
+    const clients = await getClientes() // consumidores recebe .data {array de objetos}
+    setClientes(clients)
+  }
+
+  const loadPlacas = async () => {
+    const plates = await getVeiculos()
+    setPlacas(plates)
   }
 
   useEffect(() => {
-    if (clientes.length === 0)
+    if (clientes.length == 0)
       loadClientes()
-  }, [clientes])
+      console.log(`useeffect executado - get em clientes`)
+  }, [clientes] )
+
+  useEffect(() => {
+    if (placas.length == 0)
+      loadPlacas()
+      console.log(`useeffect executado para get em placas`)
+  }, [placas] )
+
 
   const cadastraServico = () => {
 
@@ -115,9 +142,30 @@ export default function Servicos() {
                   name="veiculo"
                   placeholder="ex: ABC-8K25"
                   maxLength={7}
-                  value={placa}
+                  value={inputPlaca}
+                  onChange={handleChangeInputPlaca}
+                  onClick={loadPlacas}
                   required
                 />
+                <ul className='list-group position-absolute shadow'
+                  style={{ zIndex: 1000 }}
+                >
+                  {placasFiltradas.length > 0 ? (placasFiltradas.map((elem, index) => {
+                    return (
+                      <li
+                        key={index}
+                        className='list-group-item list-group-item-action'
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          handlePlacaSelected(elem.placa)
+                        }}
+                      >
+                        {elem.placa}
+                      </li>
+
+                    )
+                  })) : null}
+                </ul>
               </div>
 
               {/* valor cobrado label */}
