@@ -3,16 +3,30 @@ import { useState, useEffect } from "react";
 import { getClientes } from '../services/clientes'
 import { getVeiculos } from "~/services/veiculos";
 
+type Cliente = {
+  id?: string
+  nome: string
+  telefone?: string
+  endereco?: string
+}
+
+type Veiculo = {
+  id?: string
+  placa: string
+  modelo: string
+  cor?: string
+}
+
 export default function Servicos() {
 
-  const [clientes, setClientes] = useState<object[]>([])
-  const [clientesFiltrados, setClientesFiltrados] = useState<object[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([])
   const [inputNomeCliente, setInputNomeCliente] = useState('')
   const [quemRecebe, setQuemRecebe] = useState<string>('')
   const [listaQuemRecebe, setListaQuemRecebe] = useState<string[]>([])
-  const [placas, setPlacas] = useState <object[]> ([])
+  const [placas, setPlacas] = useState <Veiculo[]> ([])
   const [inputPlaca, setInputPlaca] = useState <string> ('')
-  const [placasFiltradas, setPlacasFiltradas] = useState <object[]> ([])
+  const [placasFiltradas, setPlacasFiltradas] = useState <Veiculo[]> ([])
   const [modeloVeiculo, setModeloVeiculo] = useState()
 
   const handleChangeInputNome = (e: any) => {
@@ -72,13 +86,13 @@ export default function Servicos() {
   }
 
   const loadClientes = async () => {
-    const clients = await getClientes() // consumidores recebe .data {array de objetos}
-    setClientes(clients)
+    const clients = await getClientes() 
+    setClientes(clients as Cliente[]) // cast para typescript confiar em mim, pois o retorno do firebase vem tipado como DocumentData 
   }
 
   const loadPlacas = async () => {
     const plates = await getVeiculos()
-    setPlacas(plates)
+    setPlacas(plates as Veiculo[]) // cast para typescript confiar em mim 
   }
 
   useEffect(() => {
