@@ -23,11 +23,31 @@ export default function Servicos() {
   }
 
   const handleChangeInputPlaca = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valor: string = e.target.value
-    const valorUpperCase: string = valor.toUpperCase()
-    setInputPlaca(valor)
-    const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(valorUpperCase))
-    setPlacasFiltradas(filtraPlacas)
+    let valorPlaca: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")  // remove caracteres que nao sao numeros ou letras
+    if (valorPlaca.length > 7) valorPlaca = valorPlaca.slice(0, 7); // limita a 7 chars
+
+    // Valida posição por posição
+    const padraoMercosul = [
+      /^[A-Z]$/,       // 1ª letra
+      /^[A-Z]$/,       // 2ª letra
+      /^[A-Z]$/,       // 3ª letra
+      /^[0-9]$/,       // 4º número
+      /^[A-Z0-9]$/,    // 5º letra ou número
+      /^[0-9]$/,       // 6º número
+      /^[0-9]$/,       // 7º número
+    ];
+
+    let validValue = "";
+    for (let i = 0; i < valorPlaca.length; i++) {
+      if (padraoMercosul[i].test(valorPlaca[i])) {
+        validValue += valorPlaca[i];
+      } else {
+        break; // se for inválido, para e não adiciona
+      }
+      setInputPlaca(validValue)
+      const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(validValue))
+      setPlacasFiltradas(filtraPlacas)
+    }
   }
 
   const handleChooseQuemRecebe = () => {
@@ -63,13 +83,13 @@ export default function Servicos() {
     if (clientes.length == 0)
       loadClientes()
       console.log(`useeffect executado - get em clientes`)
-  }, [clientes] )
+  }, [] )
 
   useEffect(() => {
     if (placas.length == 0)
       loadPlacas()
       console.log(`useeffect executado para get em placas`)
-  }, [placas] )
+  }, [] )
 
 
   const cadastraServico = () => {
@@ -169,6 +189,45 @@ export default function Servicos() {
                 </ul>
               </div>
 
+              {/* modelo veículo label */}
+              <div className="mb-3">
+                <h6>Modelo do veículo:</h6>
+              </div>
+
+              {/* modelo veículo */}
+              <div className="mb-3">
+                <input
+                  className="form-control"
+                  type="text"
+                  name="modeloveiculo"
+                  placeholder="ex: ford ka azul"
+                  maxLength={30}
+                  // value={inputPlaca}
+                  // onChange={handleChangeInputPlaca}
+                  // onClick={loadPlacas}
+                  required
+                />
+                <ul className='list-group position-absolute shadow'
+                  style={{ zIndex: 1000 }}
+                >
+                  {placasFiltradas.length > 0 ? (placasFiltradas.map((elem, index) => {
+                    return (
+                      <li
+                        key={index}
+                        className='list-group-item list-group-item-action'
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          handlePlacaSelected(elem.placa)
+                        }}
+                      >
+                        {elem.placa}
+                      </li>
+
+                    )
+                  })) : null}
+                </ul>
+              </div>
+
               {/* valor cobrado label */}
               <div className="mb-3">
                 <h6>Valor Cobrado:</h6>
@@ -199,18 +258,13 @@ export default function Servicos() {
                   name="quemRecebe"
                   placeholder="clique para escolher"
                   maxLength={30}
-                  list="browsers"
                   required
                   defaultValue={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
                   onClick={handleChooseQuemRecebe}
                   // onChange={handleChangeInputNome}
                   onBlur={() => setTimeout(() => setListaQuemRecebe([]), 200)}
                 />
-                <datalist id="browsers">
-                  <option value="Daniel" />
-                  <option value="Gabriel" />
-                </datalist>
-
+ 
                 <ul className='list-group position-absolute shadow'
                   style={{ zIndex: 1000 }}
                 >
