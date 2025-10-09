@@ -13,6 +13,7 @@ export default function Servicos() {
   const [placas, setPlacas] = useState <object[]> ([])
   const [inputPlaca, setInputPlaca] = useState <string> ('')
   const [placasFiltradas, setPlacasFiltradas] = useState <object[]> ([])
+  const [modeloVeiculo, setModeloVeiculo] = useState()
 
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
@@ -43,11 +44,11 @@ export default function Servicos() {
         validValue += valorPlaca[i];
       } else {
         break; // se for inválido, para e não adiciona
-      }
-      setInputPlaca(validValue)
-      const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(validValue))
-      setPlacasFiltradas(filtraPlacas)
+      }  
     }
+    setInputPlaca(validValue)
+    const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(validValue))
+    setPlacasFiltradas(filtraPlacas)
   }
 
   const handleChooseQuemRecebe = () => {
@@ -60,8 +61,9 @@ export default function Servicos() {
   }
 
   const handlePlacaSelected = (elem: any) => {
-    setInputPlaca(elem)
+    setInputPlaca(elem.placa)
     setPlacasFiltradas([])
+    setModeloVeiculo(elem.modelo)
   }
 
   const handleQuemRecebeSelected = (elem: any) => {
@@ -178,7 +180,7 @@ export default function Servicos() {
                         className='list-group-item list-group-item-action'
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
-                          handlePlacaSelected(elem.placa)
+                          handlePlacaSelected(elem)
                         }}
                       >
                         {elem.placa}
@@ -202,30 +204,9 @@ export default function Servicos() {
                   name="modeloveiculo"
                   placeholder="ex: ford ka azul"
                   maxLength={30}
-                  // value={inputPlaca}
-                  // onChange={handleChangeInputPlaca}
-                  // onClick={loadPlacas}
+                  value={modeloVeiculo}
                   required
                 />
-                <ul className='list-group position-absolute shadow'
-                  style={{ zIndex: 1000 }}
-                >
-                  {placasFiltradas.length > 0 ? (placasFiltradas.map((elem, index) => {
-                    return (
-                      <li
-                        key={index}
-                        className='list-group-item list-group-item-action'
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                          handlePlacaSelected(elem.placa)
-                        }}
-                      >
-                        {elem.placa}
-                      </li>
-
-                    )
-                  })) : null}
-                </ul>
               </div>
 
               {/* valor cobrado label */}
