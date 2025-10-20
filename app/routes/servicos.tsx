@@ -27,7 +27,7 @@ export default function Servicos() {
   const [placas, setPlacas] = useState <Veiculo[]> ([])
   const [inputPlaca, setInputPlaca] = useState <string> ('')
   const [placasFiltradas, setPlacasFiltradas] = useState <Veiculo[]> ([])
-  const [modeloVeiculo, setModeloVeiculo] = useState()
+  const [modeloVeiculo, setModeloVeiculo] = useState <string> ('')
 
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
@@ -63,6 +63,9 @@ export default function Servicos() {
     setInputPlaca(validValue)
     const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(validValue))
     setPlacasFiltradas(filtraPlacas)
+
+    setModeloVeiculo('') // testando limpar input modelo,
+
   }
 
   const handleChooseQuemRecebe = () => {
@@ -220,6 +223,7 @@ export default function Servicos() {
                   maxLength={30}
                   value={modeloVeiculo}
                   required
+                  onChange={(e) => value=e.target.value}
                 />
               </div>
 

@@ -44,11 +44,15 @@ export default function Home() {
           <div className="d-flex justify-content-around p-3">
             <div className="d-flex flex-column align-items-center p-3">
               <label>Cliente</label>
-              <button className="btn btn-secondary p-2"><img src="/app/assets/img/iconecadastrocliente.png" alt="" width={80} /></button>
+              <a href="/novocliente">
+                <button className="btn btn-secondary p-2"><img src="/app/assets/img/iconecadastrocliente.png" alt="" width={80} /></button>
+              </a>
             </div>
             <div className="d-flex flex-column align-items-center p-3">
               <label>Serviço</label>
-              <button className="btn btn-secondary p-2"><img src="/app/assets/img/guincho.jpg" alt="" width={80} /></button>
+              <a href="/novoservico">
+                <button className="btn btn-secondary p-2"><img src="/app/assets/img/guincho.jpg" alt="" width={80} /></button>
+              </a>  
             </div>
           </div>
           <div className="d-flex justify-content-end">
