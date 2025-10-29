@@ -88,6 +88,11 @@ export default function Servicos() {
     setListaQuemRecebe([])
   }
 
+  const handleChangeModeloVeiculo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor: string = e.target.value
+    setModeloVeiculo(valor)
+  }
+
   const loadClientes = async () => {
     const clients = await getClientes() 
     setClientes(clients as Cliente[]) // cast para typescript confiar em mim, pois o retorno do firebase vem tipado como DocumentData 
@@ -182,10 +187,12 @@ export default function Servicos() {
                   name="veiculo"
                   placeholder="ex: ABC-8K25"
                   maxLength={7}
+                  required
                   value={inputPlaca}
                   onChange={handleChangeInputPlaca}
                   onClick={loadPlacas}
-                  required
+                  onBlur={() => setTimeout(() => setPlacasFiltradas([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
+
                 />
                 <ul className='list-group position-absolute shadow'
                   style={{ zIndex: 1000 }}
@@ -221,9 +228,9 @@ export default function Servicos() {
                   name="modeloveiculo"
                   placeholder="ex: ford ka azul"
                   maxLength={30}
-                  value={modeloVeiculo}
                   required
-                  onChange={(e) => value=e.target.value}
+                  value={modeloVeiculo}
+                  onChange={handleChangeModeloVeiculo}
                 />
               </div>
 
