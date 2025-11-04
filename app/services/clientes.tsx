@@ -6,20 +6,23 @@ import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot } from "fire
 export const getClientes = async () => {
   try {
     const snapshot: QuerySnapshot =  await getDocs(collection(db, "clientes"));
-    return (snapshot.docs.map( (elem) => elem.data() ))
+    return (snapshot.docs.map( (elem) => ({
+      id: elem.id,
+      ...elem.data()
+    })))
   } catch (error) {
     console.log(`${error} =====>>>> ERRO AO BUSCAR CLIENTES`)
   }
   return []
 }
 
-export const postCliente = async (phone: string, name: string, adress: string) => {
+export const postCliente = async (name: string, adress?: string, phone?: string,) => {
     try {
       const docRef = await
         addDoc(collection(db, "clientes"), {
-          telefone: phone,
           nome: name,
-          endereço: adress
+          endereço: adress,
+          telefone: phone || ''  // opcao criacao para casos em que usuário nao quer cadastrar telefone, como no cadastro de serviço que acaba por cadastrar novo cliente apenas com nome e endereço. 
         });
       alert('Cliente cadastrado com sucesso')
       console.log(docRef)

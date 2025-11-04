@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 
-import { getClientes } from '../services/clientes'
+import { getClientes, postCliente } from '../services/clientes'
 import { getVeiculos } from "~/services/veiculos";
+
 
 type Cliente = {
   id?: string
@@ -21,7 +22,7 @@ export default function Servicos() {
 
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([])
-  const [inputNomeCliente, setInputNomeCliente] = useState('')
+  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | undefined>()
   const [quemRecebe, setQuemRecebe] = useState<string>('')
   const [listaQuemRecebe, setListaQuemRecebe] = useState<string[]>([])
   const [placas, setPlacas] = useState <Veiculo[]> ([])
@@ -32,7 +33,7 @@ export default function Servicos() {
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
     const valorLowerCase: string = valor.toLowerCase()
-    setInputNomeCliente(valor)    // então, dou este valor do onchange para o state 
+    setClienteSelecionado({nome: valor})    // então, dou este valor do onchange para o state 
     const filtraClientes = clientes.filter((elem: any) => elem.nome.toLowerCase().includes(valorLowerCase))
     setClientesFiltrados(filtraClientes)
   }
@@ -72,12 +73,13 @@ export default function Servicos() {
     setListaQuemRecebe(['Daniel', 'Gabriel'])
   }
 
-  const handleClienteSelected = (elem: any) => {
-    setInputNomeCliente(elem)
+  const handleClienteSelected = (elem: Cliente) => {
+    setClienteSelecionado(elem)
     setClientesFiltrados([])
+
   }
 
-  const handlePlacaSelected = (elem: any) => {
+  const handlePlacaSelected = (elem: Veiculo) => {
     setInputPlaca(elem.placa)
     setPlacasFiltradas([])
     setModeloVeiculo(elem.modelo)
@@ -117,12 +119,17 @@ export default function Servicos() {
 
 
   const cadastraServico = () => {
-
+    clienteSelecionado?.id ? console.log(' tem id') :  console.log(' nao tem id')
+    if(!clienteSelecionado?.id) {
+      postCliente(clienteSelecionado.nome, clienteSelecionado.endereco)
+      console.log(`executou post cliente sem id, enviando só nome ${JSON.stringify(clienteSelecionado)}`)
+    }
 
   }
 
   return (
     <div className="container mt-4">
+      <button onClick={cadastraServico}>teste</button>
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="border border-secondary  p-4 rounded">
@@ -149,7 +156,7 @@ export default function Servicos() {
                   placeholder="ex: Érico Veríssimo"
                   maxLength={30}
                   required
-                  value={inputNomeCliente}
+                  value={clienteSelecionado?.nome}
                   onChange={handleChangeInputNome}
                   onBlur={() => setTimeout(() => setClientesFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
                 />
@@ -163,7 +170,7 @@ export default function Servicos() {
                         className='list-group-item list-group-item-action'
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
-                          handleClienteSelected(elem.nome)
+                          handleClienteSelected(elem)
                         }}
                       >
                         {elem.nome}
