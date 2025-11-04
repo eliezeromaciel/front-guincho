@@ -8,7 +8,8 @@ type Cliente = {
   id?: string
   nome: string
   telefone?: string
-  endereco?: string
+  enderecoRetirada?: string
+  enderecoEntrega?: string
 }
 
 type Veiculo = {
@@ -20,15 +21,17 @@ type Veiculo = {
 
 export default function Servicos() {
 
-  const [clientes, setClientes] = useState<Cliente[]>([])
-  const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([])
-  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | undefined>()
-  const [quemRecebe, setQuemRecebe] = useState<string>('')
-  const [listaQuemRecebe, setListaQuemRecebe] = useState<string[]>([])
+  const [clientes, setClientes] = useState <Cliente[]>([])
+  const [clientesFiltrados, setClientesFiltrados] = useState <Cliente[]>([])
+  const [clienteSelecionado, setClienteSelecionado] = useState <Cliente | undefined>()
+  const [quemRecebe, setQuemRecebe] = useState <string>('')
+  const [listaQuemRecebe, setListaQuemRecebe] = useState <string[]>([])
   const [placas, setPlacas] = useState <Veiculo[]> ([])
   const [inputPlaca, setInputPlaca] = useState <string> ('')
   const [placasFiltradas, setPlacasFiltradas] = useState <Veiculo[]> ([])
   const [modeloVeiculo, setModeloVeiculo] = useState <string> ('')
+  const [enderecoRetirada, setEnderecoRetirada] = useState <string | undefined>('')
+  const [enderecoEntrega, setEnderecoEntrega] = useState <string>('')
 
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
@@ -76,7 +79,7 @@ export default function Servicos() {
   const handleClienteSelected = (elem: Cliente) => {
     setClienteSelecionado(elem)
     setClientesFiltrados([])
-
+    setEnderecoRetirada(elem.enderecoRetirada)
   }
 
   const handlePlacaSelected = (elem: Veiculo) => {
@@ -95,6 +98,11 @@ export default function Servicos() {
     setModeloVeiculo(valor)
   }
 
+  const handleChangeEnderecoRetirada = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor: string = e.target.value
+    setEnderecoRetirada(valor)
+  }
+  
   const loadClientes = async () => {
     const clients = await getClientes() 
     setClientes(clients as Cliente[]) // cast para typescript confiar em mim, pois o retorno do firebase vem tipado como DocumentData 
@@ -119,11 +127,15 @@ export default function Servicos() {
 
 
   const cadastraServico = () => {
-    clienteSelecionado?.id ? console.log(' tem id') :  console.log(' nao tem id')
     if(!clienteSelecionado?.id) {
-      postCliente(clienteSelecionado.nome, clienteSelecionado.endereco)
-      console.log(`executou post cliente sem id, enviando só nome ${JSON.stringify(clienteSelecionado)}`)
+  // aqui cria um novo cliente e aguarda id para entao cadastrar novo servico e salvar a id junto) 
+      postCliente(clienteSelecionado.nome, enderecoRetirada)
+      console.log(`executou post cliente sem id, enviando só nome ${JSON.stringify(clienteSelecionado)}`)      
     }
+
+  // cria novo serviço, enviando ID do cliente já existente. também salva no cliente os endereços novos/iguais
+    // CRIAR UM PUT CLIENTE, PARA MODIFICAR ENDEREÇOS
+  console.log(`endereço de retirada: ${enderecoRetirada}`)
 
   }
 
@@ -312,6 +324,8 @@ export default function Servicos() {
                   placeholder="ex: Rua Camaleão, 345, bairro Jardim, Porto Alegre"
                   maxLength={300}
                   required
+                  value={enderecoRetirada}
+                  onChange={handleChangeEnderecoRetirada}
                 />
               </div>
 
