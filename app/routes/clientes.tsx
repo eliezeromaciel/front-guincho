@@ -30,7 +30,7 @@ const Clientes = () => {
 
   const cadastraCliente = async () => {
     if (telefone.length == 15) {
-      postCliente(nome, telefone, endereco)
+      postCliente(nome, endereco, telefone)
       setTelefone('')
       setNome('')
       setEndereco('')
