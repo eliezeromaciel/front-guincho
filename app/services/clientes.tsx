@@ -1,5 +1,5 @@
 import { db } from '~/services/firebase'
-import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot } from "firebase/firestore"; 
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, QuerySnapshot } from "firebase/firestore"; 
 
 
 
@@ -29,6 +29,22 @@ export const postCliente = async (name: string, pickupAdress?: string, phone?: s
 
     } catch (error) {
       alert (`Erro ao cadastrar novo cliente`)
+      console.log(error)
+    }
+  }
+
+  // MODIFICA ENDEREÇOS DE RETIRADA E ENTREGA
+  export const patchCliente = async (id: string, pickupAdress: string, deliveryAdress: string,) => {
+    try {
+      const clienteRef = doc(db, 'clientes', id)
+
+      await updateDoc(clienteRef, {
+          enderecoRetirada: pickupAdress,
+          enderecoEntrega: deliveryAdress
+        });
+      alert('Cliente modificado com sucesso')
+    } catch (error) {
+      alert (`Erro ao modificar cliente`)
       console.log(error)
     }
   }

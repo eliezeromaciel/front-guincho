@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { getClientes, postCliente } from '../services/clientes'
+import { getClientes, postCliente, patchCliente } from '../services/clientes'
 import { getVeiculos } from "~/services/veiculos";
 
 
@@ -127,15 +127,15 @@ export default function Servicos() {
 
 
   const cadastraServico = () => {
-    if(!clienteSelecionado?.id) {
   // aqui cria um novo cliente e aguarda id para entao cadastrar novo servico e salvar a id junto) 
+    if(!clienteSelecionado?.id) {
       postCliente(clienteSelecionado.nome, enderecoRetirada)
       console.log(`executou post cliente sem id, enviando só nome ${JSON.stringify(clienteSelecionado)}`)      
     }
-
-  // cria novo serviço, enviando ID do cliente já existente. também salva no cliente os endereços novos/iguais
-    // CRIAR UM PUT CLIENTE, PARA MODIFICAR ENDEREÇOS
-  console.log(`endereço de retirada: ${enderecoRetirada}`)
+    
+    // cria novo serviço, enviando ID do cliente já existente. também salva no cliente os endereços novos/iguais
+    patchCliente(clienteSelecionado.id, enderecoRetirada, enderecoEntrega)
+    console.log(`ID: ${clienteSelecionado.id} - RETIRADA: ${enderecoRetirada}, - ENTREGA: ${enderecoEntrega}`)
 
   }
 
