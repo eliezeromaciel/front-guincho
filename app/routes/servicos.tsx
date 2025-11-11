@@ -129,11 +129,15 @@ export default function Servicos() {
   const cadastraServico = () => {
   // aqui cria um novo cliente e aguarda id para entao cadastrar novo servico e salvar a id junto) 
     if(!clienteSelecionado?.id) {
-      postCliente(clienteSelecionado.nome, enderecoRetirada)
+      postCliente(clienteSelecionado.nome, enderecoRetirada, enderecoEntrega)
       console.log(`executou post cliente sem id, enviando só nome ${JSON.stringify(clienteSelecionado)}`)      
     }
     
-    // cria novo serviço, enviando ID do cliente já existente. também salva no cliente os endereços novos/iguais
+    // cria novo serviço, enviando ID do cliente já existente. 
+    
+
+
+    // atualiza endereços no cliente
     patchCliente(clienteSelecionado.id, enderecoRetirada, enderecoEntrega)
     console.log(`ID: ${clienteSelecionado.id} - RETIRADA: ${enderecoRetirada}, - ENTREGA: ${enderecoEntrega}`)
 
