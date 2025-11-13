@@ -6,14 +6,17 @@ import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot } from "fire
 export const getVeiculos =  async () => {
  try {
      const snapshot: QuerySnapshot =  await getDocs(collection(db, "veiculos"));
-     return (snapshot.docs.map( (elem) => elem.data() ))
+     return (snapshot.docs.map( (elem) => ({
+      id: elem.id,     
+      ...elem.data()
+    })))
    } catch (error) {
-     console.log(`${error} =====>>>> ERRO AO BUSCAR veiculos`)
+     console.log(`${error} =====>>>> ERRO AO BUSCAR VEÍCULOS`)
      return []
     }
 }
 
-export const postVeiculo = async (plate: string, model: string, color: string) => {
+export const postNovoVeiculo = async (plate: string, model: string) => {
     try {
       await
         addDoc(collection(db, "veiculos"), {
