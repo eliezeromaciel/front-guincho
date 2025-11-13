@@ -19,7 +19,6 @@ export const postVeiculo = async (plate: string, model: string, color: string) =
         addDoc(collection(db, "veiculos"), {
           placa: plate,
           modelo: model,
-          cor: color
         });
       alert('veículo cadastrado com sucesso')
     } catch (error) {

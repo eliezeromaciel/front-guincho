@@ -16,7 +16,6 @@ type Veiculo = {
   id?: string
   placa: string
   modelo: string
-  cor?: string
 }
 
 export default function Servicos() {

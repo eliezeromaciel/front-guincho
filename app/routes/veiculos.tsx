@@ -103,25 +103,6 @@ const Veiculos = () => {
                 />
               </div>
 
-              {/* cor label*/}
-              <div className="mb-3">
-                <h6>Cor:</h6>
-              </div>
-
-              {/* cor input */}
-              <div className="mb-3">
-                <input
-                  className="form-control"
-                  type="text"
-                  name="cor"
-                  placeholder="ex: azul escuro"
-                  maxLength={20}
-                  value={cor}
-                  onChange={(e) => setCor(e.target.value)}
-                  required
-                />
-              </div>
-
 
               <div className="d-grid">
                 <button type="submit" className="btn btn-primary" >
