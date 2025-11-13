@@ -16,14 +16,13 @@ export const getServicos = async () => {
   return []
 }
 
-export const postServico = async (name: string, plate: string, model: string, amountCharged: number, receiver:string, pickUpAdress: string, deliveryAdress: string) => {
+export const postServico = async (idClient: string, plate: string, model: string, amountCharged: number, receiver:string, pickUpAdress: string, deliveryAdress: string) => {
     try {
       const docRef = await
         addDoc(collection(db, "servicos"), {
-          clienteId: name,
+          clienteId: idClient,
           
         });
-        // addDOC também em cliente 
       alert('Serviço cadastrado com sucesso')
       console.log(docRef)
 

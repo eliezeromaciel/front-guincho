@@ -26,9 +26,9 @@ export default function Servicos() {
   const [clienteSelecionado, setClienteSelecionado] = useState <Cliente | undefined>()
   const [quemRecebe, setQuemRecebe] = useState <string>('')
   const [listaQuemRecebe, setListaQuemRecebe] = useState <string[]>([])
-  const [placas, setPlacas] = useState <Veiculo[]> ([])
-  const [inputPlaca, setInputPlaca] = useState <string> ('')
-  const [placasFiltradas, setPlacasFiltradas] = useState <Veiculo[]> ([])
+  const [veiculos, setVeiculos] = useState <Veiculo[]> ([])
+  const [placaMercosul, setPlacaMercosul] = useState <string> ('')
+  const [veiculosFiltrados, setVeiculosFiltrados] = useState <Veiculo[]> ([])
   const [modeloVeiculo, setModeloVeiculo] = useState <string> ('')
   const [enderecoRetirada, setEnderecoRetirada] = useState <string | undefined>('')
   const [enderecoEntrega, setEnderecoEntrega] = useState <string>('')
@@ -56,17 +56,17 @@ export default function Servicos() {
       /^[0-9]$/,       // 7º número
     ];
 
-    let validValue = "";
+    let placaValidada = "";
     for (let i = 0; i < valorPlaca.length; i++) {
       if (padraoMercosul[i].test(valorPlaca[i])) {
-        validValue += valorPlaca[i];
+        placaValidada += valorPlaca[i];
       } else {
         break; // se for inválido, para e não adiciona
       }  
     }
-    setInputPlaca(validValue)
-    const filtraPlacas = placas.filter((elem: any) => elem.placa.includes(validValue))
-    setPlacasFiltradas(filtraPlacas)
+    setPlacaMercosul(placaValidada)
+    const filtraPlacas = veiculos.filter((elem: any) => elem.placa.includes(placaValidada))
+    setVeiculosFiltrados(filtraPlacas)
 
     setModeloVeiculo('') // testando limpar input modelo,
 
@@ -83,8 +83,8 @@ export default function Servicos() {
   }
 
   const handlePlacaSelected = (elem: Veiculo) => {
-    setInputPlaca(elem.placa)
-    setPlacasFiltradas([])
+    setPlacaMercosul(elem.placa)
+    setVeiculosFiltrados([])
     setModeloVeiculo(elem.modelo)
   }
 
@@ -110,7 +110,7 @@ export default function Servicos() {
 
   const loadPlacas = async () => {
     const plates = await getVeiculos()
-    setPlacas(plates as Veiculo[]) // cast para typescript confiar em mim 
+    setVeiculos(plates as Veiculo[]) // cast para typescript confiar em mim 
   }
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function Servicos() {
   }, [] )
 
   useEffect(() => {
-    if (placas.length == 0)
+    if (veiculos.length == 0)
       loadPlacas()
       console.log(`useeffect executado para get em placas`)
   }, [] )
@@ -211,16 +211,16 @@ export default function Servicos() {
                   placeholder="ex: ABC-8K25"
                   maxLength={7}
                   required
-                  value={inputPlaca}
+                  value={placaMercosul}
                   onChange={handleChangeInputPlaca}
                   onClick={loadPlacas}
-                  onBlur={() => setTimeout(() => setPlacasFiltradas([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
+                  onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
 
                 />
                 <ul className='list-group position-absolute shadow'
                   style={{ zIndex: 1000 }}
                 >
-                  {placasFiltradas.length > 0 ? (placasFiltradas.map((elem, index) => {
+                  {veiculosFiltrados.length > 0 ? (veiculosFiltrados.map((elem, index) => {
                     return (
                       <li
                         key={index}
