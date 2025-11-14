@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { getClientes, postCliente, patchCliente } from '../services/clientes'
-import { getVeiculos } from "~/services/veiculos";
+import { getVeiculos, postNovoVeiculo } from "~/services/veiculos";
 
 
 type Cliente = {
@@ -15,7 +15,7 @@ type Cliente = {
 type Veiculo = {
   id?: string
   placa: string
-  modelo: string
+  modelo?: string
 }
 
 export default function Servicos() {
@@ -26,7 +26,7 @@ export default function Servicos() {
   const [quemRecebe, setQuemRecebe] = useState <string>('')
   const [listaQuemRecebe, setListaQuemRecebe] = useState <string[]>([])
   const [veiculos, setVeiculos] = useState <Veiculo[]> ([])
-  const [placaMercosul, setPlacaMercosul] = useState <string> ('')
+  const [veiculoSelecionado, setVeiculoSelecionado] = useState <Veiculo | undefined> ()
   const [veiculosFiltrados, setVeiculosFiltrados] = useState <Veiculo[]> ([])
   const [modeloVeiculo, setModeloVeiculo] = useState <string> ('')
   const [enderecoRetirada, setEnderecoRetirada] = useState <string | undefined>('')
@@ -63,12 +63,13 @@ export default function Servicos() {
         break; // se for inválido, para e não adiciona
       }  
     }
-    setPlacaMercosul(placaValidada)
+   
+    setVeiculoSelecionado({placa: placaValidada})
+
     const filtraPlacas = veiculos.filter((elem: any) => elem.placa.includes(placaValidada))
     setVeiculosFiltrados(filtraPlacas)
 
-    setModeloVeiculo('') // testando limpar input modelo,
-
+    setModeloVeiculo('') // limpa input modelo quando usuário começa a digitar uma placa,
   }
 
   const handleChooseQuemRecebe = () => {
@@ -82,7 +83,7 @@ export default function Servicos() {
   }
 
   const handlePlacaSelected = (elem: Veiculo) => {
-    setPlacaMercosul(elem.placa)
+    setVeiculoSelecionado(elem)
     setVeiculosFiltrados([])
     setModeloVeiculo(elem.modelo)
   }
@@ -107,7 +108,7 @@ export default function Servicos() {
     setClientes(clients as Cliente[]) // cast para typescript confiar em mim, pois o retorno do firebase vem tipado como DocumentData 
   }
 
-  const loadPlacas = async () => {
+  const loadVeiculos = async () => {
     const plates = await getVeiculos()
     setVeiculos(plates as Veiculo[]) // cast para typescript confiar em mim 
   }
@@ -120,7 +121,7 @@ export default function Servicos() {
 
   useEffect(() => {
     if (veiculos.length == 0)
-      loadPlacas()
+      loadVeiculos()
       console.log(`useeffect executado para get em placas`)
   }, [] )
 
@@ -142,9 +143,18 @@ export default function Servicos() {
 
   }
 
+  const cadastraServicoTESTE = () => {
+    // CADASTRAR AQUI NOVO VEICULO, se nao existir a placa no banco de dados.
+    if(!veiculoSelecionado?.id) {
+      veiculoSelecionado?.placa.length == 7 ?  postNovoVeiculo(veiculoSelecionado.placa, modeloVeiculo) : alert( 'placa incompleta')
+      
+    }
+    console.log(`${JSON.stringify(veiculoSelecionado)}`)      
+  }
+
   return (
     <div className="container mt-4">
-      <button onClick={cadastraServico}>teste</button>
+      <button onClick={cadastraServicoTESTE}>teste</button>
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="border border-secondary  p-4 rounded">
@@ -210,9 +220,8 @@ export default function Servicos() {
                   placeholder="ex: ABC-8K25"
                   maxLength={7}
                   required
-                  value={placaMercosul}
+                  value={veiculoSelecionado?.placa}
                   onChange={handleChangeInputPlaca}
-                  onClick={loadPlacas}
                   onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
 
                 />
