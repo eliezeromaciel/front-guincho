@@ -1,16 +1,15 @@
 import { useState, useRef } from 'react'
-import { postVeiculo } from '~/services/veiculos'
-
+import { postNovoVeiculo } from '~/services/veiculos'
 
 
 
 const Veiculos = () => {
 
-  const [placa, setPlaca] = useState <string> ('')
+  const [placa, setPlaca] = useState<string>('')
   const [modelo, setModelo] = useState<string>('')
   const [cor, setCor] = useState<string>('')
 
-  const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement> ) => {
+  const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let valor: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")  // remove caracteres que nao sao numeros ou letras
     if (valor.length > 7) valor = valor.slice(0, 7); // limita a 7 chars
 
@@ -33,22 +32,32 @@ const Veiculos = () => {
         break; // se for inválido, para e não adiciona
       }
     }
-    
+
     setPlaca(validValue);
   }
-  
+
   const cadastraVeiculo = async () => {
-    if (placa.length == 7) {
-      postVeiculo(placa, modelo, cor )
-      setPlaca('')
-      setModelo('')
-      setCor('')
-    } else {
-      alert (`A placa do veículo não está completa.`)
+    if (placa.length !== 7) {
+      alert(`Placa incompleta`)
+      return
     }
+
+    const response = await postNovoVeiculo(placa, modelo)
+
+    if (!response.ok) {
+      alert(`Erro ao cadastrar o veículo`)
+      return
+    }
+
+    
+    const {docRef} = response
+    console.log(docRef.id)
+
+    alert(`Veículo cadastrado com sucesso`)
+
+    setPlaca('')
+    setModelo('')
   }
-
-
 
   return (
     <div className="container mt-4">
@@ -57,16 +66,16 @@ const Veiculos = () => {
           <div className="border border-secondary p-4 rounded">
             <h3 className="text-secondary mb-3">Cadastro de Veículos</h3>
 
-            <form className="needs-validation" 
-              onSubmit={ (e) => {
-                  e.preventDefault()
-                  cadastraVeiculo()
-                }}
+            <form className="needs-validation"
+              onSubmit={(e) => {
+                e.preventDefault()
+                cadastraVeiculo()
+              }}
             >
 
               {/* placa label */}
               <div className="mb-3">
-                <h6>Placa:</h6> 
+                <h6>Placa:</h6>
               </div>
 
               {/* placa input */}
@@ -98,7 +107,7 @@ const Veiculos = () => {
                   placeholder="ex: kadett"
                   maxLength={30}
                   value={modelo}
-                  onChange={(e) => setModelo(e.target.value) }
+                  onChange={(e) => setModelo(e.target.value)}
                   required
                 />
               </div>

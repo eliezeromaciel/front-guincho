@@ -1,7 +1,15 @@
 import { db } from '~/services/firebase'
-import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot } from "firebase/firestore"; 
+import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot, DocumentReference } from "firebase/firestore"; 
 
+type PostVeiculoSuccess = {
+  ok: true;
+  docRef: DocumentReference;
+};
 
+type PostVeiculoError = {
+  ok: false;
+  error: any;
+};
 
 export const getVeiculos =  async () => {
  try {
@@ -16,15 +24,16 @@ export const getVeiculos =  async () => {
     }
 }
 
-export const postNovoVeiculo = async (plate: string, model: string) => {
-    try {
-      await
-        addDoc(collection(db, "veiculos"), {
-          placa: plate,
-          modelo: model,
-        });
-      alert('veículo cadastrado com sucesso')
-    } catch (error) {
-      console.log(error)
-    }
+export const postNovoVeiculo = async (plate: string, model: string): Promise <PostVeiculoSuccess | PostVeiculoError> => {
+  try {
+    const docRef = await addDoc(collection(db, "veiculos"), {
+      placa: plate,
+      modelo: model,
+    });
+
+    return { ok: true, docRef };
+  } catch (error) {
+    console.log("Erro ao cadastrar novo veículo:", error);
+    return { ok: false, error };
   }
+};
