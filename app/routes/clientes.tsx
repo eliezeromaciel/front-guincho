@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { postCliente } from '~/services/clientes'
+import { postNovoCliente } from '~/services/clientes'
 
 
 
@@ -30,7 +30,7 @@ const Clientes = () => {
 
   const cadastraCliente = async () => {
     if (telefone.length == 15) {
-      postCliente(nome, endereco, telefone)
+      postNovoCliente(nome, endereco, telefone)
       setTelefone('')
       setNome('')
       setEndereco('')

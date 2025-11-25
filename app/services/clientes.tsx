@@ -17,7 +17,7 @@ export const getClientes = async () => {
 }
 
 // CRIA NOVO CLIENTE
-export const postCliente = async (name: string, pickupAdress?: string, deliveryAdress?:string, phone?: string,) => {
+export const postNovoCliente = async (name: string, pickupAdress?: string, deliveryAdress?:string, phone?: string,) => {
     try {
       const docRef = await
         addDoc(collection(db, "clientes"), {
@@ -27,8 +27,7 @@ export const postCliente = async (name: string, pickupAdress?: string, deliveryA
           telefone: phone || ''  // opcao criacao para casos em que usuário nao quer cadastrar telefone, como no cadastro de serviço que acaba por cadastrar novo cliente apenas com nome e endereço. 
         });
       alert('Cliente cadastrado com sucesso')
-      console.log(docRef)
-
+      return docRef
     } catch (error) {
       alert (`Erro ao cadastrar novo cliente`)
       console.log(error)
