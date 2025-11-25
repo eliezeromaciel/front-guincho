@@ -16,7 +16,7 @@ export const getServicos = async () => {
   return []
 }
 
-export const postServico = async (idClient: string, plate: string, model: string, amountCharged: number, receiver:string, pickUpAdress: string, deliveryAdress: string) => {
+export const postNovoServico = async (idClient: string, idVeiculo: string, amountCharged: number, receiver:string, pickUpAdress: string, deliveryAdress: string) => {
     try {
       const docRef = await
         addDoc(collection(db, "servicos"), {
