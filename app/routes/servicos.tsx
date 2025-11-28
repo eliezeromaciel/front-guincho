@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 
-import { getClientes, postCliente, patchCliente } from '../services/clientes'
+import { getClientes, postNovoCliente, patchCliente } from '../services/clientes'
 import { getVeiculos, postNovoVeiculo } from "~/services/veiculos";
+import { postNovoServico } from "~/services/servicos";
 
 
 type Cliente = {
@@ -29,7 +30,7 @@ export default function Servicos() {
   const [veiculoSelecionado, setVeiculoSelecionado] = useState <Veiculo | undefined> ()
   const [veiculosFiltrados, setVeiculosFiltrados] = useState <Veiculo[]> ([])
   const [modeloVeiculo, setModeloVeiculo] = useState <string> ('')
-  const [enderecoRetirada, setEnderecoRetirada] = useState <string | undefined>('')
+  const [enderecoRetirada, setEnderecoRetirada] = useState <string>('')
   const [enderecoEntrega, setEnderecoEntrega] = useState <string>('')
 
   const handleChangeInputNome = (e: any) => {
@@ -79,13 +80,13 @@ export default function Servicos() {
   const handleClienteSelected = (elem: Cliente) => {
     setClienteSelecionado(elem)
     setClientesFiltrados([])
-    setEnderecoRetirada(elem.enderecoRetirada)
+    setEnderecoRetirada(elem.enderecoRetirada ?? '')
   }
 
   const handlePlacaSelected = (elem: Veiculo) => {
     setVeiculoSelecionado(elem)
     setVeiculosFiltrados([])
-    setModeloVeiculo(elem.modelo)
+    setModeloVeiculo(elem.modelo ?? '') // se elem.modelo for undefined, então fica string vazia.( conserto de erro de tipagem)
   }
 
   const handleQuemRecebeSelected = (elem: any) => {
@@ -102,6 +103,11 @@ export default function Servicos() {
     const valor: string = e.target.value
     setEnderecoRetirada(valor)
   }
+
+  const handleChangeEnderecoEntrega = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor: string = e.target.value
+    setEnderecoEntrega(valor);
+  };
   
   const loadClientes = async () => {
     const clients = await getClientes() 
@@ -125,46 +131,81 @@ export default function Servicos() {
       console.log(`useeffect executado para get em placas`)
   }, [] )
 
+  const resetarFormulario = () => {
+    setClienteSelecionado({nome: ''});
+    setClientesFiltrados([]);
+    setQuemRecebe('');
+    setListaQuemRecebe([]);
+    setVeiculosFiltrados([]);
+    setVeiculoSelecionado({placa: ''});
+    setModeloVeiculo('');
+    setEnderecoRetirada('');
+    setEnderecoEntrega('');
+  };
 
-  const cadastraServico = () => {
-  // aqui cria um novo cliente e aguarda id para entao cadastrar novo servico e salvar a id junto) 
-    if(!clienteSelecionado?.id) {
-      postCliente(clienteSelecionado.nome, enderecoRetirada, enderecoEntrega)
-      console.log(`executou post cliente sem id, enviando só nome ${JSON.stringify(clienteSelecionado)}`)      
+  const cadastraServico = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    const formData = new FormData(e.currentTarget);
+    const valorCobrado = formData.get("valorCobrado");
+    console.log(valorCobrado)
+
+    let clienteId = clienteSelecionado?.id;
+    let veiculoId = veiculoSelecionado?.id;
+
+    // 1. Cria cliente, se não existir
+    if (!clienteId) {
+      const novoCliente = await postNovoCliente(clienteSelecionado!.nome, enderecoRetirada, enderecoEntrega);
+      console.log(`Cliente cadastrado no banco de dados.`)
+      if (!novoCliente.ok) {
+        alert(`Erro banco de dados ao cadastrar cliente: ${novoCliente.error}`);
+        return;
+      }
+      clienteId = novoCliente.docRef.id;
     }
-    
-    // cria novo serviço, enviando ID do cliente já existente. 
-    
 
+    // 2. Cria veículo, se não existir
+    if (!veiculoId) {
+      if (!veiculoSelecionado?.placa || veiculoSelecionado.placa.length !== 7) {
+        alert("Placa incompleta");
+        return;
+      }
 
-    // atualiza endereços no cliente
-    patchCliente(clienteSelecionado.id, enderecoRetirada, enderecoEntrega)
-    console.log(`ID: ${clienteSelecionado.id} - RETIRADA: ${enderecoRetirada}, - ENTREGA: ${enderecoEntrega}`)
-
-  }
-
-  const cadastraServicoTESTE = () => {
-    // CADASTRAR AQUI NOVO VEICULO, se nao existir a placa no banco de dados.
-    if(!veiculoSelecionado?.id) {
-      veiculoSelecionado?.placa.length == 7 ?  postNovoVeiculo(veiculoSelecionado.placa, modeloVeiculo) : alert( 'placa incompleta')
-      
+      const novoVeiculo = await postNovoVeiculo(veiculoSelecionado.placa, modeloVeiculo);
+      console.log(`Novo veículo cadastrado no banco de dados.`)
+      if (!novoVeiculo.ok) {
+        alert(`Erro banco de dados ao cadastrar veículo: ${novoVeiculo.error}`);
+        return;
+      }
+      veiculoId = novoVeiculo.docRef.id;
     }
-    console.log(`${JSON.stringify(veiculoSelecionado)}`)      
-  }
+
+    // 3. Atualiza cliente (endereços)
+    await patchCliente(clienteId, enderecoRetirada!, enderecoEntrega);
+
+    // 4. Cria serviço usando os IDs obtidos
+    const novoServico = await postNovoServico(clienteId, veiculoId, ' VALOR COBRADO ' , quemRecebe, enderecoRetirada, enderecoEntrega);
+
+    if (!novoServico.ok) {
+      alert(`Erro banco de dados ao cadastrar veículo: ${novoServico.error}`);
+      return;
+    }
+
+    alert("Serviço criado com sucesso!");
+    resetarFormulario()
+  };
+
+
 
   return (
     <div className="container mt-4">
-      <button onClick={cadastraServicoTESTE}>teste</button>
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="border border-secondary  p-4 rounded">
             <h3 className="d-flex justify-content-center text-secondary mb-3 ">Novo Serviço</h3>
 
             <form className="needs-validation"
-              onSubmit={(e) => {
-                e.preventDefault()
-                cadastraServico()
-              }}
+              onSubmit={cadastraServico}
             >
 
               {/* cliente label */}
@@ -279,7 +320,16 @@ export default function Servicos() {
                   placeholder="ex: 200,00"
                   maxLength={4}
                   required
-                />
+                  onInput={(e) => {
+                    const target = e.currentTarget;
+                    // usuário só digita números
+                    let valor = target.value.replace(/\D/g, "").slice(0, 4);
+                    // impede zero à esquerda (exceto se o usuário quiser digitar apenas "0")
+                    if (valor.length > 1 && valor.startsWith("0")) {
+                      valor = valor.replace(/^0+/, ""); // remove zeros iniciais
+                    }
+                    target.value = valor;
+                  }} />
               </div>
 
               {/* recebedor label */}
@@ -355,6 +405,8 @@ export default function Servicos() {
                   placeholder="ex: Av. Indústrias, 79, centro, São Leopoldo"
                   maxLength={300}
                   required
+                  value={enderecoEntrega}
+                  onChange={handleChangeEnderecoEntrega}
                 />
               </div>
 
