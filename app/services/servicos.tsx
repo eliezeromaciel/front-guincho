@@ -5,8 +5,8 @@ import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot } from "fire
 
 export const getServicos = async () => {
   try {
-    const snapshot: QuerySnapshot =  await getDocs(collection(db, "servicos"));
-    return (snapshot.docs.map( (elem) => ({
+    const snapshot: QuerySnapshot = await getDocs(collection(db, "servicos"));
+    return (snapshot.docs.map((elem) => ({
       id: elem.id,
       ...elem.data()
     })))
@@ -16,18 +16,15 @@ export const getServicos = async () => {
   return []
 }
 
-export const postNovoServico = async (idClient: string, idVeiculo: string, amountCharged: number, receiver:string, pickUpAdress: string, deliveryAdress: string) => {
-    try {
-      const docRef = await
-        addDoc(collection(db, "servicos"), {
-          clienteId: idClient,
-          
-        });
-      alert('Serviço cadastrado com sucesso')
-      console.log(docRef)
+export const postNovoServico = async (idClient: string, idVeiculo: string, amountCharged: string, receiver: string, pickUpAdress: string, deliveryAdress: string) => {
+  try {
+    const docRef = await
+      addDoc(collection(db, "servicos"), {
+        clienteId: idClient,
 
-    } catch (error) {
-      alert (`Erro ao cadastrar novo serviço`)
-      console.log(error)
-    }
+      });
+    return { ok: true, docRef };
+  } catch (error) {
+    return { ok: false, error };
   }
+}

@@ -24,12 +24,13 @@ export const getVeiculos =  async () => {
     }
 }
 
-export const postNovoVeiculo = async (plate: string, model: string): Promise <PostVeiculoSuccess | PostVeiculoError> => {
+export const postNovoVeiculo = async (plate: string, model: string): Promise<PostVeiculoSuccess | PostVeiculoError> => {
   try {
-    const docRef = await addDoc(collection(db, "veiculos"), {
-      placa: plate,
-      modelo: model,
-    });
+    const docRef = await
+      addDoc(collection(db, "veiculos"), {
+        placa: plate,
+        modelo: model,
+      });
 
     return { ok: true, docRef };
   } catch (error) {
