@@ -5,6 +5,8 @@
     font-family: "Heebo", sans-serif;
     color: #858585
 }
+
+
 .bg-cinzaClaro {
     color: #858585 !important}
 .bg-cinzaEscuro {
@@ -33,3 +35,7 @@
     background-color: #004d00;
 }
 
+
+.option-hover:hover {
+  background-color: #e9ecef;
+}

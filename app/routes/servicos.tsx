@@ -21,22 +21,22 @@ type Veiculo = {
 
 export default function Servicos() {
 
-  const [clientes, setClientes] = useState <Cliente[]>([])
-  const [clientesFiltrados, setClientesFiltrados] = useState <Cliente[]>([])
-  const [clienteSelecionado, setClienteSelecionado] = useState <Cliente | undefined>()
-  const [quemRecebe, setQuemRecebe] = useState <string>('')
-  const [listaQuemRecebe, setListaQuemRecebe] = useState <string[]>([])
-  const [veiculos, setVeiculos] = useState <Veiculo[]> ([])
-  const [veiculoSelecionado, setVeiculoSelecionado] = useState <Veiculo | undefined> ()
-  const [veiculosFiltrados, setVeiculosFiltrados] = useState <Veiculo[]> ([])
-  const [modeloVeiculo, setModeloVeiculo] = useState <string> ('')
-  const [enderecoRetirada, setEnderecoRetirada] = useState <string>('')
-  const [enderecoEntrega, setEnderecoEntrega] = useState <string>('')
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([])
+  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | undefined>()
+  const [quemRecebe, setQuemRecebe] = useState<string>('')
+  const [showOptions, setShowOptions] = useState(false);
+  const [veiculos, setVeiculos] = useState<Veiculo[]>([])
+  const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | undefined>()
+  const [veiculosFiltrados, setVeiculosFiltrados] = useState<Veiculo[]>([])
+  const [modeloVeiculo, setModeloVeiculo] = useState<string>('')
+  const [enderecoRetirada, setEnderecoRetirada] = useState<string>('')
+  const [enderecoEntrega, setEnderecoEntrega] = useState<string>('')
 
   const handleChangeInputNome = (e: any) => {
     const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
     const valorLowerCase: string = valor.toLowerCase()
-    setClienteSelecionado({nome: valor})    // então, dou este valor do onchange para o state 
+    setClienteSelecionado({ nome: valor })    // então, dou este valor do onchange para o state 
     const filtraClientes = clientes.filter((elem: any) => elem.nome.toLowerCase().includes(valorLowerCase))
     setClientesFiltrados(filtraClientes)
   }
@@ -62,10 +62,10 @@ export default function Servicos() {
         placaValidada += valorPlaca[i];
       } else {
         break; // se for inválido, para e não adiciona
-      }  
+      }
     }
-   
-    setVeiculoSelecionado({placa: placaValidada})
+
+    setVeiculoSelecionado({ placa: placaValidada })
 
     const filtraPlacas = veiculos.filter((elem: any) => elem.placa.includes(placaValidada))
     setVeiculosFiltrados(filtraPlacas)
@@ -73,9 +73,7 @@ export default function Servicos() {
     setModeloVeiculo('') // limpa input modelo quando usuário começa a digitar uma placa,
   }
 
-  const handleChooseQuemRecebe = () => {
-    setListaQuemRecebe(['Daniel', 'Gabriel'])
-  }
+  const listaQuemRecebe = ['Daniel', 'Gabriel']
 
   const handleClienteSelected = (elem: Cliente) => {
     setClienteSelecionado(elem)
@@ -87,11 +85,6 @@ export default function Servicos() {
     setVeiculoSelecionado(elem)
     setVeiculosFiltrados([])
     setModeloVeiculo(elem.modelo ?? '') // se elem.modelo for undefined, então fica string vazia.( conserto de erro de tipagem)
-  }
-
-  const handleQuemRecebeSelected = (elem: any) => {
-    setQuemRecebe(elem)
-    setListaQuemRecebe([])
   }
 
   const handleChangeModeloVeiculo = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,9 +101,9 @@ export default function Servicos() {
     const valor: string = e.target.value
     setEnderecoEntrega(valor);
   };
-  
+
   const loadClientes = async () => {
-    const clients = await getClientes() 
+    const clients = await getClientes()
     setClientes(clients as Cliente[]) // cast para typescript confiar em mim, pois o retorno do firebase vem tipado como DocumentData 
   }
 
@@ -122,22 +115,21 @@ export default function Servicos() {
   useEffect(() => {
     if (clientes.length == 0)
       loadClientes()
-      console.log(`useeffect executado - get em clientes`)
-  }, [] )
+    console.log(`useeffect executado - get em clientes`)
+  }, [])
 
   useEffect(() => {
     if (veiculos.length == 0)
       loadVeiculos()
-      console.log(`useeffect executado para get em placas`)
-  }, [] )
+    console.log(`useeffect executado para get em placas`)
+  }, [])
 
   const resetarFormulario = () => {
-    setClienteSelecionado({nome: ''});
+    setClienteSelecionado({ nome: '' });
     setClientesFiltrados([]);
     setQuemRecebe('');
-    setListaQuemRecebe([]);
     setVeiculosFiltrados([]);
-    setVeiculoSelecionado({placa: ''});
+    setVeiculoSelecionado({ placa: '' });
     setModeloVeiculo('');
     setEnderecoRetirada('');
     setEnderecoEntrega('');
@@ -145,6 +137,11 @@ export default function Servicos() {
 
   const cadastraServico = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+
+    if(quemRecebe.length <= 0) {
+      alert('Escolha quem irá receber.')
+      return
+    }
 
     const formData = new FormData(e.currentTarget);
     const valorCobrado = formData.get("valorCobrado");
@@ -184,7 +181,7 @@ export default function Servicos() {
     await patchCliente(clienteId, enderecoRetirada!, enderecoEntrega);
 
     // 4. Cria serviço usando os IDs obtidos
-    const novoServico = await postNovoServico(clienteId, veiculoId, ' VALOR COBRADO ' , quemRecebe, enderecoRetirada, enderecoEntrega);
+    const novoServico = await postNovoServico(clienteId, veiculoId, 'valorCobrado' , quemRecebe, enderecoRetirada, enderecoEntrega);
 
     if (!novoServico.ok) {
       alert(`Erro banco de dados ao cadastrar veículo: ${novoServico.error}`);
@@ -346,30 +343,54 @@ export default function Servicos() {
                   placeholder="clique para escolher"
                   maxLength={30}
                   required
-                  defaultValue={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
-                  onClick={handleChooseQuemRecebe}
-                  // onChange={handleChangeInputNome}
-                  onBlur={() => setTimeout(() => setListaQuemRecebe([]), 200)}
+                  value={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+                  readOnly
+                  onClick={() => setShowOptions(!showOptions)}
+                // onChange={handleChangeInputNome}
+                  onBlur={() => setTimeout(() => setShowOptions(false), 100)}
                 />
- 
-                <ul className='list-group position-absolute shadow'
-                  style={{ zIndex: 1000 }}
+
+                {/* seta indicando dropdown (opcional, mantém layout moderno) */}
+                <span
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    top: "38px",
+                    cursor: "pointer",
+                    userSelect: "none"
+                  }}
+                  onClick={() => setShowOptions(!showOptions)}
                 >
-                  {listaQuemRecebe.length > 0 ? (listaQuemRecebe.map((elem: any, index) => {
-                    return (
-                      <li
+                  ▼
+                </span>
+
+                {showOptions && (
+                  <div
+                    className="border rounded bg-white"
+                    style={{
+                      position: "absolute",
+                      zIndex: 10,
+                      width: "100%",
+                      marginTop: "2px",
+                      maxHeight: "160px",
+                      overflowY: "auto",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {listaQuemRecebe.map((item, index) => (
+                      <div
                         key={index}
-                        className='list-group-item list-group-item-action'
-                        style={{ cursor: 'pointer' }}
+                        className="p-2 option-hover"
                         onClick={() => {
-                          handleQuemRecebeSelected(elem)
+                          setQuemRecebe(item);
+                          setShowOptions(false);
                         }}
                       >
-                        {elem}
-                      </li>
-                    )
-                  })) : null}
-                </ul>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* endereço retirada label */}

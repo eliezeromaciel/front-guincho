@@ -5,5 +5,6 @@ export default [
     route('/novoservico', 'routes/servicos.tsx'),
     route('/novocliente', 'routes/clientes.tsx'),
     route('/veiculos', 'routes/veiculos.tsx'),
+    route('/manutencao', 'routes/planejamento.jsx'),
 
 ] satisfies RouteConfig;
