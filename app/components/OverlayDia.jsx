@@ -49,6 +49,18 @@ export default function OverlayDia({
     })
   }
 
+  function atualizarNome(demandaId, nome){
+    setSemana(prev=>{
+      const novo = structuredClone(prev)
+      Object.values(novo).forEach(lista=>{
+        lista.forEach(d=>{
+          if(d.id === demandaId) d.nome = nome
+        })
+      })
+      return novo
+    })
+  }
+
   function removerFuncionario(demandaId, funcId){
 
     setSemana(prev=>{
@@ -69,9 +81,15 @@ export default function OverlayDia({
   }
 
   return(
-    <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50">
+    <div
+      className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+      onClick={fechar}
+    >
 
-      <div className="bg-white m-5 p-4 h-100 overflow-auto">
+      <div
+        className="bg-white m-5 p-4 h-100 overflow-auto"
+        onClick={e => e.stopPropagation()}
+      >
 
         <button
           className="btn btn-dark mb-3"
@@ -99,6 +117,7 @@ export default function OverlayDia({
                     <CaixaDemanda
                       demanda={d}
                       removerFuncionario={removerFuncionario}
+                      atualizarNome={atualizarNome}
                     />
                   </div>
                 ))}

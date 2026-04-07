@@ -2,7 +2,8 @@ import {useDroppable} from "@dnd-kit/core"
 
 export default function CaixaDemanda({
   demanda,
-  removerFuncionario
+  removerFuncionario,
+  atualizarNome
 }){
 
   const {setNodeRef,isOver} =
@@ -21,8 +22,8 @@ export default function CaixaDemanda({
       <input
         className="form-control mb-2"
         placeholder="Delegacia / setor"
-        // value={demanda.nome}
-        onChange={e=>demanda.nome = e.target.value}
+        defaultValue={demanda.nome}
+        onChange={e=>atualizarNome(demanda.id, e.target.value)}
       />
 
       {demanda.funcionarios.map(f=>(

@@ -2,20 +2,19 @@
 import {useState} from "react"
 import {DndContext} from "@dnd-kit/core"
 import ColunaDia from "../components/ColunaDia"
+import OverlayDia from "../components/OverlayDia"
 import {criarSemana} from "../utils/criarSemana"
+import {funcionarios} from "../assets/funcionariosMock"
 
 export default function Planejamento(){
 
   const [semana,setSemana] = useState(criarSemana())
   const [overlay,setOverlay] = useState(null)
 
-  // function abrirOverlay(dia, demandaId){
-  //   setOverlay({dia, demandaId})
-  // }
-
   function abrirOverlay(dia){
-  setOverlay({dia})
-}
+    setOverlay({dia})
+  }
+
   function fecharOverlay(){
     setOverlay(null)
   }
@@ -53,8 +52,8 @@ export default function Planejamento(){
   return(
     <div className="container mt-4">
 
+        <p>CONTROLE DE DEMANDAS</p>
       <DndContext onDragEnd={onDragEnd}>
-
         <div className="row">
 
           {Object.keys(semana).map(dia=>(
@@ -69,6 +68,16 @@ export default function Planejamento(){
         </div>
 
       </DndContext>
+
+      {overlay && (
+        <OverlayDia
+          dia={overlay.dia}
+          fechar={fecharOverlay}
+          funcionarios={funcionarios}
+          semana={semana}
+          setSemana={setSemana}
+        />
+      )}
 
     </div>
   )

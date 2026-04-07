@@ -28,7 +28,7 @@ export default function ColunaDia({dia, demandas, abrirOverlay}){
           {dia.toUpperCase()}
         </h5>
 
-        {demandas.map(d=>(
+        {demandas.filter(d=>d.nome.trim()).map(d=>(
           <CardDemanda
             key={d.id}
             demanda={d}
