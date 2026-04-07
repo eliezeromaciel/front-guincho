@@ -12,11 +12,7 @@ export default function CaixaDemanda({
   return(
     <div
       ref={setNodeRef}
-      className="border p-2"
-      style={{
-        height:120,
-        background:isOver ? "#d1e7dd" : "white"
-      }}
+      className={`caixa-demanda${isOver ? " drag-over" : ""}`}
     >
 
       <input
@@ -26,16 +22,27 @@ export default function CaixaDemanda({
         onChange={e=>atualizarNome(demanda.id, e.target.value)}
       />
 
-      {demanda.funcionarios.map(f=>(
-        <div
-          key={f.id}
-          className="badge bg-primary me-1"
-          style={{cursor:"pointer"}}
-          onClick={()=>removerFuncionario(demanda.id, f.id)}
-        >
-          {f.nome}
-        </div>
-      ))}
+      <div className="d-flex flex-wrap gap-1">
+        {demanda.funcionarios.map(f=>(
+          <span
+            key={f.id}
+            title="Clique para remover"
+            onClick={()=>removerFuncionario(demanda.id, f.id)}
+            style={{
+              background: "#dbeafe",
+              color: "#1d4ed8",
+              fontWeight: 600,
+              fontSize: "0.72rem",
+              borderRadius: 20,
+              padding: "3px 10px",
+              cursor: "pointer",
+              userSelect: "none"
+            }}
+          >
+            {f.nome} ×
+          </span>
+        ))}
+      </div>
 
     </div>
   )

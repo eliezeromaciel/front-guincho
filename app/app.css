@@ -39,3 +39,155 @@
 .option-hover:hover {
   background-color: #e9ecef;
 }
+
+/* ── PLANEJAMENTO ── */
+.plan-page {
+  background-color: #f1f5f9;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.plan-titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #475569;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.coluna-dia {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  border: none !important;
+  padding: 1rem;
+  min-height: 520px;
+  transition: background 0.2s;
+}
+
+.dia-header {
+  border-radius: 8px;
+  padding: 0.45rem 0.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  user-select: none;
+}
+.dia-header:hover { opacity: 0.75; transform: scale(1.03); }
+
+.card-demanda {
+  border-radius: 10px !important;
+  border-left: 4px solid #93c5fd !important;
+  border-top: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  background: #fff;
+  padding: 0.6rem 0.75rem !important;
+}
+
+.card-demanda strong {
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+/* Overlay */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.45);
+  z-index: 1050;
+}
+
+.overlay-painel {
+  background: #f8fafc;
+  border-radius: 18px;
+  margin: 1.5rem;
+  padding: 2rem;
+  height: calc(100% - 3rem);
+  overflow: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+}
+
+.overlay-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #334155;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.btn-fechar {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  border-radius: 8px;
+  padding: 0.4rem 1.1rem;
+  transition: background 0.15s;
+}
+.btn-fechar:hover { background: #e2e8f0; color: #1e293b; }
+
+/* CaixaDemanda */
+.caixa-demanda {
+  border-radius: 12px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  padding: 0.75rem !important;
+  background: #ffffff;
+  min-height: 120px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.caixa-demanda.drag-over {
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
+
+.caixa-demanda input {
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+
+/* ListaFuncionarios */
+.lista-func-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.func-item {
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 500;
+  padding: 0.45rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1.5px solid transparent;
+  transition: opacity 0.15s;
+}
+
+.func-disponivel {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+  cursor: grab;
+}
+
+.func-ocupado {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: grab;
+}

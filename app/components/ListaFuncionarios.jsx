@@ -18,7 +18,7 @@ function Item({func, ocupado}){
       {...listeners}
       {...attributes}
       style={style}
-      className={`p-2 border mb-2 ${ocupado ? "bg-secondary text-white" : "bg-light"}`}
+      className={`func-item ${ocupado ? "func-ocupado" : "func-disponivel"}`}
     >
       {func.nome}
     </div>
@@ -28,7 +28,8 @@ function Item({func, ocupado}){
 export default function ListaFuncionarios({funcionarios, ocupados}){
 
   return(
-    <div style={{width:220}}>
+    <div style={{width:200, flexShrink:0}}>
+      <p className="lista-func-titulo">Funcionários</p>
       {funcionarios.map(f=>(
         <Item
           key={f.id}

@@ -1,38 +1,36 @@
 import {useDroppable} from "@dnd-kit/core"
 import CardDemanda from "./CardDemanda"
 
+const coresDia = {
+  segunda: { header: "#dbeafe", text: "#1d4ed8" },
+  terca:   { header: "#ede9fe", text: "#6d28d9" },
+  quarta:  { header: "#dcfce7", text: "#166534" },
+  quinta:  { header: "#fef3c7", text: "#92400e" },
+  sexta:   { header: "#fce7f3", text: "#be185d" },
+}
+
 export default function ColunaDia({dia, demandas, abrirOverlay}){
 
-  const {setNodeRef, isOver} = useDroppable({
-    id: dia
-  })
+  const {setNodeRef, isOver} = useDroppable({ id: dia })
+  const cor = coresDia[dia] ?? { header: "#f1f5f9", text: "#475569" }
 
   return(
     <div className="col">
       <div
         ref={setNodeRef}
-        className="border p-3"
-        style={{
-          minHeight:500,
-          background:isOver ? "#e7f1ff" : "#f8f9fa"
-        }}
+        className="coluna-dia"
+        style={{ background: isOver ? "#eff6ff" : "#ffffff" }}
       >
-
-        {/* 🔥 AGORA O CLICK É AQUI */}
-        <h5
-          className="text-center mb-3"
-          style={{cursor:"pointer"}}
-          onClick={()=> (abrirOverlay(dia), console.log(`clic em dias testando`))}
-          // onClick={()=>console.log(`testando clic EM DIAS`)}
+        <div
+          className="dia-header"
+          style={{ background: cor.header, color: cor.text }}
+          onClick={() => abrirOverlay(dia)}
         >
           {dia.toUpperCase()}
-        </h5>
+        </div>
 
-        {demandas.filter(d=>d.nome.trim()).map(d=>(
-          <CardDemanda
-            key={d.id}
-            demanda={d}
-          />
+        {demandas.filter(d => d.nome.trim()).map(d => (
+          <CardDemanda key={d.id} demanda={d} />
         ))}
 
       </div>

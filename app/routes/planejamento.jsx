@@ -50,11 +50,12 @@ export default function Planejamento(){
   }
 
   return(
-    <div className="container mt-4">
+    <div className="plan-page">
 
-        <p>CONTROLE DE DEMANDAS</p>
+      <p className="plan-titulo text-center">Controle de Demandas</p>
+
       <DndContext onDragEnd={onDragEnd}>
-        <div className="row">
+        <div className="row g-3">
 
           {Object.keys(semana).map(dia=>(
             <ColunaDia

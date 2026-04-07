@@ -20,15 +20,23 @@ export default function CardDemanda({demanda}){
       {...listeners}
       {...attributes}
       style={style}
-      className="card mb-2 p-2"
+      className="card-demanda mb-2"
     >
       <strong>{demanda.nome || "Sem nome"}</strong>
 
-      <div className="mt-2">
+      <div className="mt-2 d-flex flex-wrap gap-1">
         {demanda.funcionarios.map(f=>(
           <span
             key={f.id}
-            className="badge bg-primary me-1"
+            className="badge"
+            style={{
+              background: "#ede9fe",
+              color: "#6d28d9",
+              fontWeight: 600,
+              fontSize: "0.72rem",
+              borderRadius: 20,
+              padding: "3px 10px"
+            }}
           >
             {f.nome}
           </span>

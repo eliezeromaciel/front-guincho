@@ -12,8 +12,7 @@ export default function OverlayDia({
 
   const demandas = semana[dia]
 
-  const ocupados = Object.values(semana)
-    .flat()
+  const ocupados = semana[dia]
     .flatMap(d=>d.funcionarios.map(f=>f.id))
 
   function onDragEnd(event){
@@ -82,23 +81,23 @@ export default function OverlayDia({
 
   return(
     <div
-      className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+      className="overlay-backdrop"
       onClick={fechar}
     >
 
       <div
-        className="bg-white m-5 p-4 h-100 overflow-auto"
+        className="overlay-painel"
         onClick={e => e.stopPropagation()}
       >
 
         <button
-          className="btn btn-dark mb-3"
+          className="btn-fechar mb-3"
           onClick={fechar}
         >
-          Fechar
+          ← Fechar
         </button>
 
-        <h2>{dia.toUpperCase()}</h2>
+        <p className="overlay-titulo">{dia}</p>
 
         <DndContext onDragEnd={onDragEnd}>
 
