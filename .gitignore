@@ -4,3 +4,31 @@
 # React Router
 /.react-router/
 /build/
+
+# Variáveis de ambiente (nunca commitar)
+.env
+.env.local
+
+# Claude Code — configurações pessoais
+.claude/settings.local.json
+
+# Editores e IDEs
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# Sistema operacional
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testes e cobertura
+/coverage/
+
+# Arquivos temporários
+*.tmp
+*.temp
