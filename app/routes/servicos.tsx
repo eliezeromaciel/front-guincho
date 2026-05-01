@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { getClientes, postNovoCliente, patchCliente } from '../services/clientes'
 import { getVeiculos, postNovoVeiculo } from "~/services/veiculos";
 import { postNovoServico } from "~/services/servicos";
+import { enviarNotificacao } from "~/services/notificacoes";
 
 
 type Cliente = {
@@ -144,8 +145,7 @@ export default function Servicos() {
     }
 
     const formData = new FormData(e.currentTarget);
-    const valorCobrado = formData.get("valorCobrado");
-    console.log(valorCobrado)
+    const valorCobrado = (formData.get("valorCobrado") as string) ?? '';
 
     let clienteId = clienteSelecionado?.id;
     let veiculoId = veiculoSelecionado?.id;
@@ -181,12 +181,19 @@ export default function Servicos() {
     await patchCliente(clienteId, enderecoRetirada!, enderecoEntrega);
 
     // 4. Cria serviço usando os IDs obtidos
-    const novoServico = await postNovoServico(clienteId, veiculoId, 'valorCobrado' , quemRecebe, enderecoRetirada, enderecoEntrega);
+    const novoServico = await postNovoServico(clienteId, veiculoId, valorCobrado, quemRecebe, enderecoRetirada, enderecoEntrega);
 
     if (!novoServico.ok) {
-      alert(`Erro banco de dados ao cadastrar veículo: ${novoServico.error}`);
+      alert(`Erro banco de dados ao cadastrar serviço: ${novoServico.error}`);
       return;
     }
+
+    // 5. Notifica o funcionário designado
+    await enviarNotificacao(
+      quemRecebe,
+      'Novo serviço atribuído!',
+      `Cliente: ${clienteSelecionado?.nome} — Retirada: ${enderecoRetirada}`
+    );
 
     alert("Serviço criado com sucesso!");
     resetarFormulario()

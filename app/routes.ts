@@ -6,5 +6,5 @@ export default [
     route('/novocliente', 'routes/clientes.tsx'),
     route('/veiculos', 'routes/veiculos.tsx'),
     route('/manutencao', 'routes/planejamento.jsx'),
-
+    route('/api/notificar', 'routes/api.notificar.ts'),
 ] satisfies RouteConfig;

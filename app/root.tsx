@@ -8,18 +8,14 @@ import {
 } from "react-router";
 import { useEffect } from "react";
 import type { Route } from "./+types/root";
-import OffCanvas from "./components/offcanvas/offcanvas";
-
-
+import SeletorFuncionario from "./components/SeletorFuncionario";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import "./app.css";
 
-
-
-
 export const links: Route.LinksFunction = () => [
+  { rel: "manifest", href: "/manifest.json" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -34,10 +30,14 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0d6efd" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="GuinchoFácil" />
         <Meta />
         <Links />
       </head>
@@ -51,16 +51,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  useEffect(() => { // roda o arquivo min.js no lado do navegador, pois useeffect só renderiza no navegador, nunca no lado do servidor. 
-    // @ts-ignore       // diz p typescript ignorar a tipagem do arquivo, pois o arquivo  " implicitly has an 'any' type "
+  useEffect(() => {
+    // @ts-ignore
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('[SW] registrado:', reg.scope);
+      }).catch((err) => {
+        console.log('[SW] erro ao registrar:', err);
+      });
+    }
   }, []);
+
   return (
     <>
-      {/* <OffCanvas/> */}
+      <SeletorFuncionario />
       <Outlet />
     </>
-);
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
