@@ -128,7 +128,17 @@ The following are already in `.gitignore` and must stay there. Never remove them
 - Firebase API keys, `projectId`, `appId`, `messagingSenderId` — currently in `app/services/firebase.ts` as a known exception for this project's setup, but new secrets must always go in `.env`
 - `VAPID_PRIVATE_KEY` — server-only, must stay in `.env` and in Vercel environment variables
 - `VITE_VAPID_PUBLIC_KEY` — safe to be public, but still managed via `.env` for consistency
+- `EMPLOYEE_PIN_DANIEL`, `EMPLOYEE_PIN_GABRIEL` — PINs de autenticação dos funcionários; server-only, nunca expor no client
 - Any token, password, private key, or credential of any kind
+
+### Employee PIN system
+
+Each employee has a numeric PIN stored as a server-only environment variable (`EMPLOYEE_PIN_{NAME}`). The PIN is required to register a push notification subscription on a device, preventing subscription hijacking.
+
+- PINs are validated in `app/routes/api.registrar-subscription.ts` against `process.env.EMPLOYEE_PIN_{NAME}`
+- The Firestore write for `subscriptions/` happens **only server-side** after PIN validation — never from the client directly
+- To add a new employee: add them to `FUNCIONARIOS_VALIDOS` in `api.registrar-subscription.ts`, add to `FUNCIONARIOS` in `SeletorFuncionario.tsx`, and add `EMPLOYEE_PIN_{NAME}` to `.env` and Vercel dashboard
+- PINs must be at least 4 digits; no maximum enforced by code — choose strong PINs operationally
 
 ### Rules for Claude Code
 
