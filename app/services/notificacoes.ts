@@ -1,6 +1,3 @@
-import { db } from '~/services/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -8,7 +5,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
-export const registrarSubscription = async (funcionario: string): Promise<boolean> => {
+export const registrarSubscription = async (funcionario: string, pin: string): Promise<boolean> => {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.log('[notificacoes] Push não suportado neste dispositivo');
     return false;
@@ -23,21 +20,26 @@ export const registrarSubscription = async (funcionario: string): Promise<boolea
     }
 
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
+    console.log('[notificacoes] vapidKey:', vapidKey); // adicione esta linha
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey),
     });
 
     const sub = subscription.toJSON();
-    await setDoc(doc(db, 'subscriptions', funcionario.toLowerCase()), {
-      funcionario: funcionario.toLowerCase(),
-      endpoint: sub.endpoint,
-      keys: sub.keys,
-      updatedAt: serverTimestamp(),
+    const response = await fetch('/api/registrar-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        funcionario,
+        pin,
+        subscription: { endpoint: sub.endpoint, keys: sub.keys },
+      }),
     });
 
-    console.log('[notificacoes] subscription registrada para:', funcionario);
-    return true;
+    const result = await response.json();
+    console.log('[notificacoes] resultado do registro:', result);
+    return result.ok === true;
   } catch (error) {
     console.log('[notificacoes] erro ao registrar subscription:', error);
     return false;
