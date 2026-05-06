@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
-
-import { getClientes, postNovoCliente, patchCliente } from '../services/clientes'
-import { getVeiculos, postNovoVeiculo } from "~/services/veiculos";
-import { postNovoServico } from "~/services/servicos";
-import { enviarNotificacao } from "~/services/notificacoes";
-
+import { useEffect, useRef, useState } from 'react'
+import { useFetcher, useLoaderData } from 'react-router'
+import { getClientes, postNovoCliente, patchCliente } from '~/services/clientes'
+import { getVeiculos, postNovoVeiculo } from '~/services/veiculos'
+import { postNovoServico } from '~/services/servicos'
+import type { Route } from './+types/servicos'
 
 type Cliente = {
   id?: string
@@ -20,58 +19,128 @@ type Veiculo = {
   modelo?: string
 }
 
-export default function Servicos() {
+export const loader = async () => {
+  const clientes = await getClientes()
+  const veiculos = await getVeiculos()
+  return { clientes, veiculos }
+}
 
-  const [clientes, setClientes] = useState<Cliente[]>([])
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formData = await request.formData()
+  const clienteIdRaw = (formData.get('clienteId') as string) ?? ''
+  const clienteNome = formData.get('cliente') as string
+  const veiculoIdRaw = (formData.get('veiculoId') as string) ?? ''
+  const veiculoPlaca = formData.get('veiculo') as string
+  const modeloVeiculo = (formData.get('modeloveiculo') as string) ?? ''
+  const valorCobrado = (formData.get('valorCobrado') as string) ?? ''
+  const quemRecebe = formData.get('quemRecebe') as string
+  const enderecoRetirada = (formData.get('enderecoRetirada') as string) ?? ''
+  const enderecoEntrega = (formData.get('enderecoEntrega') as string) ?? ''
+
+  let clienteId = clienteIdRaw
+  let veiculoId = veiculoIdRaw
+
+  // 1. Cria cliente se não existir
+  if (!clienteId) {
+    const novoCliente = await postNovoCliente(clienteNome, enderecoRetirada, enderecoEntrega)
+    if (!novoCliente.ok) {
+      return { ok: false as const, error: `Erro ao cadastrar cliente: ${novoCliente.error}` }
+    }
+    clienteId = novoCliente.docRef.id
+  }
+
+  // 2. Cria veículo se não existir
+  if (!veiculoId) {
+    if (!veiculoPlaca || veiculoPlaca.length !== 7) {
+      return { ok: false as const, error: 'Placa incompleta' }
+    }
+    const novoVeiculo = await postNovoVeiculo(veiculoPlaca, modeloVeiculo)
+    if (!novoVeiculo.ok) {
+      return { ok: false as const, error: `Erro ao cadastrar veículo: ${novoVeiculo.error}` }
+    }
+    veiculoId = novoVeiculo.docRef.id
+  }
+
+  // 3. Atualiza endereços do cliente
+  await patchCliente(clienteId, enderecoRetirada, enderecoEntrega)
+
+  // 4. Cria serviço
+  const novoServico = await postNovoServico(clienteId, veiculoId, valorCobrado, quemRecebe, enderecoRetirada, enderecoEntrega)
+  if (!novoServico.ok) {
+    return { ok: false as const, error: `Erro ao cadastrar serviço: ${novoServico.error}` }
+  }
+
+  // 5. Notifica o funcionário (HTTP interno para a rota api.notificar)
+  try {
+    const notificarUrl = new URL('/api/notificar', request.url).toString()
+    await fetch(notificarUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        funcionario: quemRecebe,
+        titulo: 'Novo serviço atribuído!',
+        corpo: `Cliente: ${clienteNome} — Retirada: ${enderecoRetirada}`,
+      }),
+    })
+  } catch (error) {
+    console.log('[servicos action] erro ao notificar:', error)
+  }
+
+  return { ok: true as const }
+}
+
+export default function Servicos() {
+  const { clientes, veiculos } = useLoaderData<typeof loader>()
+  const fetcher = useFetcher<typeof action>()
+  const wasSubmitting = useRef(false)
+
   const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([])
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | undefined>()
   const [quemRecebe, setQuemRecebe] = useState<string>('')
-  const [showOptions, setShowOptions] = useState(false);
-  const [veiculos, setVeiculos] = useState<Veiculo[]>([])
-  const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | undefined>()
+  const [showOptions, setShowOptions] = useState(false)
   const [veiculosFiltrados, setVeiculosFiltrados] = useState<Veiculo[]>([])
+  const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | undefined>()
   const [modeloVeiculo, setModeloVeiculo] = useState<string>('')
   const [enderecoRetirada, setEnderecoRetirada] = useState<string>('')
   const [enderecoEntrega, setEnderecoEntrega] = useState<string>('')
 
-  const handleChangeInputNome = (e: any) => {
-    const valor: string = e.target.value // aqui eu consigo pegar o valor que o usuário digitou, não como VALUE do input, mas VALUE DO EVENTO ONCHANGE.
+  const handleChangeInputNome = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor: string = e.target.value
     const valorLowerCase: string = valor.toLowerCase()
-    setClienteSelecionado({ nome: valor })    // então, dou este valor do onchange para o state 
-    const filtraClientes = clientes.filter((elem: any) => elem.nome.toLowerCase().includes(valorLowerCase))
+    setClienteSelecionado({ nome: valor })
+    const filtraClientes = (clientes as Cliente[]).filter((elem) =>
+      (elem.nome ?? '').toLowerCase().includes(valorLowerCase)
+    )
     setClientesFiltrados(filtraClientes)
   }
 
   const handleChangeInputPlaca = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let valorPlaca: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")  // remove caracteres que nao sao numeros ou letras
-    if (valorPlaca.length > 7) valorPlaca = valorPlaca.slice(0, 7); // limita a 7 chars
+    let valorPlaca: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    if (valorPlaca.length > 7) valorPlaca = valorPlaca.slice(0, 7)
 
-    // Valida posição por posição
     const padraoMercosul = [
-      /^[A-Z]$/,       // 1ª letra
-      /^[A-Z]$/,       // 2ª letra
-      /^[A-Z]$/,       // 3ª letra
-      /^[0-9]$/,       // 4º número
-      /^[A-Z0-9]$/,    // 5º letra ou número
-      /^[0-9]$/,       // 6º número
-      /^[0-9]$/,       // 7º número
-    ];
+      /^[A-Z]$/,
+      /^[A-Z]$/,
+      /^[A-Z]$/,
+      /^[0-9]$/,
+      /^[A-Z0-9]$/,
+      /^[0-9]$/,
+      /^[0-9]$/,
+    ]
 
-    let placaValidada = "";
+    let placaValidada = ''
     for (let i = 0; i < valorPlaca.length; i++) {
       if (padraoMercosul[i].test(valorPlaca[i])) {
-        placaValidada += valorPlaca[i];
+        placaValidada += valorPlaca[i]
       } else {
-        break; // se for inválido, para e não adiciona
+        break
       }
     }
 
     setVeiculoSelecionado({ placa: placaValidada })
-
-    const filtraPlacas = veiculos.filter((elem: any) => elem.placa.includes(placaValidada))
+    const filtraPlacas = (veiculos as Veiculo[]).filter((elem) => elem.placa.includes(placaValidada))
     setVeiculosFiltrados(filtraPlacas)
-
-    setModeloVeiculo('') // limpa input modelo quando usuário começa a digitar uma placa,
+    setModeloVeiculo('')
   }
 
   const listaQuemRecebe = ['Daniel', 'Gabriel']
@@ -85,132 +154,70 @@ export default function Servicos() {
   const handlePlacaSelected = (elem: Veiculo) => {
     setVeiculoSelecionado(elem)
     setVeiculosFiltrados([])
-    setModeloVeiculo(elem.modelo ?? '') // se elem.modelo for undefined, então fica string vazia.( conserto de erro de tipagem)
+    setModeloVeiculo(elem.modelo ?? '')
   }
 
   const handleChangeModeloVeiculo = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valor: string = e.target.value
-    setModeloVeiculo(valor)
+    setModeloVeiculo(e.target.value)
   }
 
   const handleChangeEnderecoRetirada = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valor: string = e.target.value
-    setEnderecoRetirada(valor)
+    setEnderecoRetirada(e.target.value)
   }
 
   const handleChangeEnderecoEntrega = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valor: string = e.target.value
-    setEnderecoEntrega(valor);
-  };
-
-  const loadClientes = async () => {
-    const clients = await getClientes()
-    setClientes(clients as Cliente[]) // cast para typescript confiar em mim, pois o retorno do firebase vem tipado como DocumentData 
+    setEnderecoEntrega(e.target.value)
   }
-
-  const loadVeiculos = async () => {
-    const plates = await getVeiculos()
-    setVeiculos(plates as Veiculo[]) // cast para typescript confiar em mim 
-  }
-
-  useEffect(() => {
-    if (clientes.length == 0)
-      loadClientes()
-    console.log(`useeffect executado - get em clientes`)
-  }, [])
-
-  useEffect(() => {
-    if (veiculos.length == 0)
-      loadVeiculos()
-    console.log(`useeffect executado para get em placas`)
-  }, [])
 
   const resetarFormulario = () => {
-    setClienteSelecionado({ nome: '' });
-    setClientesFiltrados([]);
-    setQuemRecebe('');
-    setVeiculosFiltrados([]);
-    setVeiculoSelecionado({ placa: '' });
-    setModeloVeiculo('');
-    setEnderecoRetirada('');
-    setEnderecoEntrega('');
-  };
+    setClienteSelecionado({ nome: '' })
+    setClientesFiltrados([])
+    setQuemRecebe('')
+    setVeiculosFiltrados([])
+    setVeiculoSelecionado({ placa: '' })
+    setModeloVeiculo('')
+    setEnderecoRetirada('')
+    setEnderecoEntrega('')
+  }
 
-  const cadastraServico = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if(quemRecebe.length <= 0) {
-      alert('Escolha quem irá receber.')
-      return
+  useEffect(() => {
+    if (fetcher.state === 'submitting') {
+      wasSubmitting.current = true
     }
-
-    const formData = new FormData(e.currentTarget);
-    const valorCobrado = (formData.get("valorCobrado") as string) ?? '';
-
-    let clienteId = clienteSelecionado?.id;
-    let veiculoId = veiculoSelecionado?.id;
-
-    // 1. Cria cliente, se não existir
-    if (!clienteId) {
-      const novoCliente = await postNovoCliente(clienteSelecionado!.nome, enderecoRetirada, enderecoEntrega);
-      console.log(`Cliente cadastrado no banco de dados.`)
-      if (!novoCliente.ok) {
-        alert(`Erro banco de dados ao cadastrar cliente: ${novoCliente.error}`);
-        return;
+    if (fetcher.state === 'idle' && wasSubmitting.current) {
+      wasSubmitting.current = false
+      if (fetcher.data?.ok) {
+        alert('Serviço criado com sucesso!')
+        resetarFormulario()
+      } else if (fetcher.data && !fetcher.data.ok) {
+        alert(`Erro: ${fetcher.data.error}`)
       }
-      clienteId = novoCliente.docRef.id;
     }
-
-    // 2. Cria veículo, se não existir
-    if (!veiculoId) {
-      if (!veiculoSelecionado?.placa || veiculoSelecionado.placa.length !== 7) {
-        alert("Placa incompleta");
-        return;
-      }
-
-      const novoVeiculo = await postNovoVeiculo(veiculoSelecionado.placa, modeloVeiculo);
-      console.log(`Novo veículo cadastrado no banco de dados.`)
-      if (!novoVeiculo.ok) {
-        alert(`Erro banco de dados ao cadastrar veículo: ${novoVeiculo.error}`);
-        return;
-      }
-      veiculoId = novoVeiculo.docRef.id;
-    }
-
-    // 3. Atualiza cliente (endereços)
-    await patchCliente(clienteId, enderecoRetirada!, enderecoEntrega);
-
-    // 4. Cria serviço usando os IDs obtidos
-    const novoServico = await postNovoServico(clienteId, veiculoId, valorCobrado, quemRecebe, enderecoRetirada, enderecoEntrega);
-
-    if (!novoServico.ok) {
-      alert(`Erro banco de dados ao cadastrar serviço: ${novoServico.error}`);
-      return;
-    }
-
-    // 5. Notifica o funcionário designado
-    await enviarNotificacao(
-      quemRecebe,
-      'Novo serviço atribuído!',
-      `Cliente: ${clienteSelecionado?.nome} — Retirada: ${enderecoRetirada}`
-    );
-
-    alert("Serviço criado com sucesso!");
-    resetarFormulario()
-  };
-
-
+  }, [fetcher.state, fetcher.data])
 
   return (
     <div className="container mt-4">
       <div className="row justify-content-center">
         <div className="col-md-6">
-          <div className="border border-secondary  p-4 rounded">
-            <h3 className="d-flex justify-content-center text-secondary mb-3 ">Novo Serviço</h3>
+          <div className="border border-secondary p-4 rounded">
+            <h3 className="d-flex justify-content-center text-secondary mb-3">Novo Serviço</h3>
 
-            <form className="needs-validation"
-              onSubmit={cadastraServico}
+            <fetcher.Form
+              method="post"
+              className="needs-validation"
+              onSubmit={(e) => {
+                if (quemRecebe.length <= 0) {
+                  e.preventDefault()
+                  alert('Escolha quem irá receber.')
+                } else if (!veiculoSelecionado?.id && (!veiculoSelecionado?.placa || veiculoSelecionado.placa.length !== 7)) {
+                  e.preventDefault()
+                  alert('Placa incompleta')
+                }
+              }}
             >
+              {/* IDs ocultos — preenchidos quando o usuário seleciona do autocomplete */}
+              <input type="hidden" name="clienteId" value={clienteSelecionado?.id ?? ''} />
+              <input type="hidden" name="veiculoId" value={veiculoSelecionado?.id ?? ''} />
 
               {/* cliente label */}
               <div className="mb-3">
@@ -228,26 +235,21 @@ export default function Servicos() {
                   required
                   value={clienteSelecionado?.nome}
                   onChange={handleChangeInputNome}
-                  onBlur={() => setTimeout(() => setClientesFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
+                  onBlur={() => setTimeout(() => setClientesFiltrados([]), 200)}
                 />
-                <ul className='list-group position-absolute shadow'
-                  style={{ zIndex: 1000 }}
-                >
-                  {clientesFiltrados.length > 0 ? (clientesFiltrados.map((elem: any, index) => {
-                    return (
-                      <li
-                        key={index}
-                        className='list-group-item list-group-item-action'
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                          handleClienteSelected(elem)
-                        }}
-                      >
-                        {elem.nome}
-                      </li>
-
-                    )
-                  })) : null}
+                <ul className="list-group position-absolute shadow" style={{ zIndex: 1000 }}>
+                  {clientesFiltrados.length > 0
+                    ? clientesFiltrados.map((elem, index) => (
+                        <li
+                          key={index}
+                          className="list-group-item list-group-item-action"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleClienteSelected(elem)}
+                        >
+                          {elem.nome}
+                        </li>
+                      ))
+                    : null}
                 </ul>
               </div>
 
@@ -267,27 +269,21 @@ export default function Servicos() {
                   required
                   value={veiculoSelecionado?.placa}
                   onChange={handleChangeInputPlaca}
-                  onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 200)} // delay com settimeout, sem ele, ao clicar no nome , antes de dar certo ele zera os clientesfiltrados (funcao acima )
-
+                  onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 200)}
                 />
-                <ul className='list-group position-absolute shadow'
-                  style={{ zIndex: 1000 }}
-                >
-                  {veiculosFiltrados.length > 0 ? (veiculosFiltrados.map((elem, index) => {
-                    return (
-                      <li
-                        key={index}
-                        className='list-group-item list-group-item-action'
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                          handlePlacaSelected(elem)
-                        }}
-                      >
-                        {elem.placa}
-                      </li>
-
-                    )
-                  })) : null}
+                <ul className="list-group position-absolute shadow" style={{ zIndex: 1000 }}>
+                  {veiculosFiltrados.length > 0
+                    ? veiculosFiltrados.map((elem, index) => (
+                        <li
+                          key={index}
+                          className="list-group-item list-group-item-action"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handlePlacaSelected(elem)}
+                        >
+                          {elem.placa}
+                        </li>
+                      ))
+                    : null}
                 </ul>
               </div>
 
@@ -325,15 +321,14 @@ export default function Servicos() {
                   maxLength={4}
                   required
                   onInput={(e) => {
-                    const target = e.currentTarget;
-                    // usuário só digita números
-                    let valor = target.value.replace(/\D/g, "").slice(0, 4);
-                    // impede zero à esquerda (exceto se o usuário quiser digitar apenas "0")
-                    if (valor.length > 1 && valor.startsWith("0")) {
-                      valor = valor.replace(/^0+/, ""); // remove zeros iniciais
+                    const target = e.currentTarget
+                    let valor = target.value.replace(/\D/g, '').slice(0, 4)
+                    if (valor.length > 1 && valor.startsWith('0')) {
+                      valor = valor.replace(/^0+/, '')
                     }
-                    target.value = valor;
-                  }} />
+                    target.value = valor
+                  }}
+                />
               </div>
 
               {/* recebedor label */}
@@ -350,38 +345,34 @@ export default function Servicos() {
                   placeholder="clique para escolher"
                   maxLength={30}
                   required
-                  value={quemRecebe} // era value, mas troquei por defaultValue por indicacao do browser. servicos.tsx:118 You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+                  value={quemRecebe}
                   readOnly
                   onClick={() => setShowOptions(!showOptions)}
-                // onChange={handleChangeInputNome}
                   onBlur={() => setTimeout(() => setShowOptions(false), 100)}
                 />
-
-                {/* seta indicando dropdown (opcional, mantém layout moderno) */}
                 <span
                   style={{
-                    position: "absolute",
-                    right: "12px",
-                    top: "38px",
-                    cursor: "pointer",
-                    userSelect: "none"
+                    position: 'absolute',
+                    right: '12px',
+                    top: '38px',
+                    cursor: 'pointer',
+                    userSelect: 'none',
                   }}
                   onClick={() => setShowOptions(!showOptions)}
                 >
                   ▼
                 </span>
-
                 {showOptions && (
                   <div
                     className="border rounded bg-white"
                     style={{
-                      position: "absolute",
+                      position: 'absolute',
                       zIndex: 10,
-                      width: "100%",
-                      marginTop: "2px",
-                      maxHeight: "160px",
-                      overflowY: "auto",
-                      cursor: "pointer",
+                      width: '100%',
+                      marginTop: '2px',
+                      maxHeight: '160px',
+                      overflowY: 'auto',
+                      cursor: 'pointer',
                     }}
                   >
                     {listaQuemRecebe.map((item, index) => (
@@ -389,8 +380,8 @@ export default function Servicos() {
                         key={index}
                         className="p-2 option-hover"
                         onClick={() => {
-                          setQuemRecebe(item);
-                          setShowOptions(false);
+                          setQuemRecebe(item)
+                          setShowOptions(false)
                         }}
                       >
                         {item}
@@ -438,15 +429,16 @@ export default function Servicos() {
                 />
               </div>
 
-
               <div className="d-grid">
-                <button type="submit" className="btn btn-primary">
-                  Criar
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={fetcher.state !== 'idle'}
+                >
+                  {fetcher.state !== 'idle' ? 'Salvando...' : 'Criar'}
                 </button>
               </div>
-
-            </form>
-
+            </fetcher.Form>
           </div>
         </div>
       </div>

@@ -1,63 +1,71 @@
-import { useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useFetcher } from 'react-router'
 import { postNovoVeiculo } from '~/services/veiculos'
+import type { Route } from './+types/veiculos'
 
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formData = await request.formData()
+  const placa = formData.get('placa') as string
+  const modelo = formData.get('modelo') as string
 
+  if (placa.length !== 7) {
+    return { ok: false as const, error: 'Placa incompleta' }
+  }
+
+  const result = await postNovoVeiculo(placa, modelo)
+  if (!result.ok) {
+    return { ok: false as const, error: String(result.error) }
+  }
+  return { ok: true as const }
+}
 
 const Veiculos = () => {
-
+  const fetcher = useFetcher<typeof action>()
   const [placa, setPlaca] = useState<string>('')
   const [modelo, setModelo] = useState<string>('')
-  const [cor, setCor] = useState<string>('')
+  const wasSubmitting = useRef(false)
 
   const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let valor: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")  // remove caracteres que nao sao numeros ou letras
-    if (valor.length > 7) valor = valor.slice(0, 7); // limita a 7 chars
+    let valor: string = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    if (valor.length > 7) valor = valor.slice(0, 7)
 
-    // Valida posição por posição
     const padraoMercosul = [
-      /^[A-Z]$/,       // 1ª letra
-      /^[A-Z]$/,       // 2ª letra
-      /^[A-Z]$/,       // 3ª letra
-      /^[0-9]$/,       // 4º número
-      /^[A-Z0-9]$/,    // 5º letra ou número
-      /^[0-9]$/,       // 6º número
-      /^[0-9]$/,       // 7º número
-    ];
+      /^[A-Z]$/,
+      /^[A-Z]$/,
+      /^[A-Z]$/,
+      /^[0-9]$/,
+      /^[A-Z0-9]$/,
+      /^[0-9]$/,
+      /^[0-9]$/,
+    ]
 
-    let validValue = "";
+    let validValue = ''
     for (let i = 0; i < valor.length; i++) {
       if (padraoMercosul[i].test(valor[i])) {
-        validValue += valor[i];
+        validValue += valor[i]
       } else {
-        break; // se for inválido, para e não adiciona
+        break
       }
     }
 
-    setPlaca(validValue);
+    setPlaca(validValue)
   }
 
-  const cadastraVeiculo = async () => {
-    if (placa.length !== 7) {
-      alert(`Placa incompleta`)
-      return
+  useEffect(() => {
+    if (fetcher.state === 'submitting') {
+      wasSubmitting.current = true
     }
-
-    const response = await postNovoVeiculo(placa, modelo)
-
-    if (!response.ok) {
-      alert(`Erro ao cadastrar o veículo`)
-      return
+    if (fetcher.state === 'idle' && wasSubmitting.current) {
+      wasSubmitting.current = false
+      if (fetcher.data?.ok) {
+        setPlaca('')
+        setModelo('')
+        alert('Veículo cadastrado com sucesso')
+      } else if (fetcher.data && !fetcher.data.ok) {
+        alert(`Erro ao cadastrar o veículo: ${fetcher.data.error}`)
+      }
     }
-
-    
-    const {docRef} = response
-    console.log(docRef.id)
-
-    alert(`Veículo cadastrado com sucesso`)
-
-    setPlaca('')
-    setModelo('')
-  }
+  }, [fetcher.state, fetcher.data])
 
   return (
     <div className="container mt-4">
@@ -66,19 +74,19 @@ const Veiculos = () => {
           <div className="border border-secondary p-4 rounded">
             <h3 className="text-secondary mb-3">Cadastro de Veículos</h3>
 
-            <form className="needs-validation"
+            <fetcher.Form
+              method="post"
+              className="needs-validation"
               onSubmit={(e) => {
-                e.preventDefault()
-                cadastraVeiculo()
+                if (placa.length !== 7) {
+                  e.preventDefault()
+                  alert('Placa incompleta')
+                }
               }}
             >
-
-              {/* placa label */}
               <div className="mb-3">
                 <h6>Placa:</h6>
               </div>
-
-              {/* placa input */}
               <div className="mb-3">
                 <input
                   className="form-control"
@@ -92,13 +100,9 @@ const Veiculos = () => {
                 />
               </div>
 
-
-              {/* modelo label*/}
               <div className="mb-3">
                 <h6>Modelo:</h6>
               </div>
-
-              {/* modelo input  */}
               <div className="mb-3">
                 <input
                   className="form-control"
@@ -112,20 +116,21 @@ const Veiculos = () => {
                 />
               </div>
 
-
               <div className="d-grid">
-                <button type="submit" className="btn btn-primary" >
-                  Criar
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={fetcher.state !== 'idle'}
+                >
+                  {fetcher.state !== 'idle' ? 'Salvando...' : 'Criar'}
                 </button>
               </div>
-
-            </form>
+            </fetcher.Form>
           </div>
         </div>
       </div>
     </div>
   )
-
 }
 
 export default Veiculos
