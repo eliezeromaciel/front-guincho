@@ -20,7 +20,6 @@ export const registrarSubscription = async (funcionario: string, pin: string): P
     }
 
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
-    console.log('[notificacoes] vapidKey:', vapidKey); // adicione esta linha
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey),

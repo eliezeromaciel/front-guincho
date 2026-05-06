@@ -1,5 +1,5 @@
-import { db } from '~/services/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { adminDb } from '~/services/firebaseAdmin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const FUNCIONARIOS_VALIDOS = ['daniel', 'gabriel'];
 
@@ -28,11 +28,11 @@ export const action = async ({ request }: { request: Request }) => {
   }
 
   try {
-    await setDoc(doc(db, 'subscriptions', nomeLower), {
+    await adminDb.collection('subscriptions').doc(nomeLower).set({
       funcionario: nomeLower,
       endpoint: subscription.endpoint,
       keys: subscription.keys,
-      updatedAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     console.log('[registrar-subscription] subscription registrada para:', funcionario);
     return Response.json({ ok: true });

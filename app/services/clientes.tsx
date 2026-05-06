@@ -1,21 +1,20 @@
-import { db } from '~/services/firebase'
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, QuerySnapshot, DocumentReference } from "firebase/firestore"; 
-
-
+import { adminDb } from '~/services/firebaseAdmin';
+import type { DocumentReference } from 'firebase-admin/firestore';
 
 export const getClientes = async () => {
   try {
-    const snapshot: QuerySnapshot =  await getDocs(collection(db, "clientes"));
-    return (snapshot.docs.map( (elem) => ({
+    const snapshot = await adminDb.collection('clientes').get();
+    const result = snapshot.docs.map((elem) => ({
       id: elem.id,
-      ...elem.data()
-    })))
+      ...elem.data(),
+    }));
+    console.log('[getClientes] result:', result.length, 'docs');
+    return result;
   } catch (error) {
-    console.log(`${error} =====>>>> ERRO AO BUSCAR CLIENTES`)
+    console.log('[getClientes] erro:', error);
   }
-  return []
-}
-
+  return [];
+};
 
 type PostClienteSuccess = {
   ok: true;
@@ -24,53 +23,44 @@ type PostClienteSuccess = {
 
 type PostClienteError = {
   ok: false;
-  error: any;
+  error: unknown;
 };
 
-export const postNovoCliente = async ( name: string, pickupAdress?: string,  deliveryAdress?: string, phone?: string ): Promise<PostClienteSuccess | PostClienteError> => {
+export const postNovoCliente = async (
+  name: string,
+  pickupAdress?: string,
+  deliveryAdress?: string,
+  phone?: string,
+): Promise<PostClienteSuccess | PostClienteError> => {
   try {
-    const docRef = await addDoc(collection(db, "clientes"), {
+    const docRef = await adminDb.collection('clientes').add({
       nome: name,
       enderecoRetirada: pickupAdress,
-      enderecoEntrega: deliveryAdress|| '',
-      telefone: phone || ''  // opcao criacao para casos em que usuário nao quer cadastrar telefone, como no cadastro de serviço que acaba por cadastrar novo cliente apenas com nome e endereço. 
+      enderecoEntrega: deliveryAdress || '',
+      telefone: phone || '',
     });
-
+    console.log('[postNovoCliente] result:', { ok: true, docRef });
     return { ok: true, docRef };
   } catch (error) {
+    console.log('[postNovoCliente] result:', { ok: false, error });
     return { ok: false, error };
   }
 };
 
-// // CRIA NOVO CLIENTE
-// export const postNovoCliente = async (name: string, pickupAdress?: string, deliveryAdress?:string, phone?: string,) => {
-//     try {
-//       const docRef = await
-//         addDoc(collection(db, "clientes"), {
-//           nome: name,
-//           enderecoRetirada: pickupAdress,
-//           enderecoEntrega: deliveryAdress || '',
-//           telefone: phone || ''  // opcao criacao para casos em que usuário nao quer cadastrar telefone, como no cadastro de serviço que acaba por cadastrar novo cliente apenas com nome e endereço. 
-//         });
-//       alert('Cliente cadastrado com sucesso')
-//       return docRef
-//     } catch (error) {
-//       alert (`Erro ao cadastrar novo cliente`)
-//       console.log(error)
-//     }
-//   }
-
-  // MODIFICA ENDEREÇOS DE RETIRADA E ENTREGA
-export const patchCliente = async (id: string, pickupAdress: string, deliveryAdress: string,) => {
+export const patchCliente = async (
+  id: string,
+  pickupAdress: string,
+  deliveryAdress: string,
+) => {
   try {
-    const clienteRef = doc(db, 'clientes', id)
-
-    const docRef = await updateDoc(clienteRef, {
+    await adminDb.collection('clientes').doc(id).update({
       enderecoRetirada: pickupAdress,
-      enderecoEntrega: deliveryAdress
+      enderecoEntrega: deliveryAdress,
     });
-    return { ok: true, docRef };
+    console.log('[patchCliente] result:', { ok: true });
+    return { ok: true };
   } catch (error) {
+    console.log('[patchCliente] result:', { ok: false, error });
     return { ok: false, error };
   }
-}
+};

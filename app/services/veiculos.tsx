@@ -1,5 +1,5 @@
-import { db } from '~/services/firebase'
-import { collection, getDocs, addDoc, deleteDoc, doc, QuerySnapshot, DocumentReference } from "firebase/firestore"; 
+import { adminDb } from '~/services/firebaseAdmin';
+import type { DocumentReference } from 'firebase-admin/firestore';
 
 type PostVeiculoSuccess = {
   ok: true;
@@ -8,33 +8,37 @@ type PostVeiculoSuccess = {
 
 type PostVeiculoError = {
   ok: false;
-  error: any;
+  error: unknown;
 };
 
-export const getVeiculos =  async () => {
- try {
-     const snapshot: QuerySnapshot =  await getDocs(collection(db, "veiculos"));
-     return (snapshot.docs.map( (elem) => ({
-      id: elem.id,     
-      ...elem.data()
-    })))
-   } catch (error) {
-     console.log(`${error} =====>>>> ERRO AO BUSCAR VEÍCULOS`)
-     return []
-    }
-}
-
-export const postNovoVeiculo = async (plate: string, model: string): Promise<PostVeiculoSuccess | PostVeiculoError> => {
+export const getVeiculos = async () => {
   try {
-    const docRef = await
-      addDoc(collection(db, "veiculos"), {
-        placa: plate,
-        modelo: model,
-      });
+    const snapshot = await adminDb.collection('veiculos').get();
+    const result = snapshot.docs.map((elem) => ({
+      id: elem.id,
+      ...elem.data(),
+    }));
+    console.log('[getVeiculos] result:', result.length, 'docs');
+    return result;
+  } catch (error) {
+    console.log('[getVeiculos] erro:', error);
+    return [];
+  }
+};
 
+export const postNovoVeiculo = async (
+  plate: string,
+  model: string,
+): Promise<PostVeiculoSuccess | PostVeiculoError> => {
+  try {
+    const docRef = await adminDb.collection('veiculos').add({
+      placa: plate,
+      modelo: model,
+    });
+    console.log('[postNovoVeiculo] result:', { ok: true, docRef });
     return { ok: true, docRef };
   } catch (error) {
-    console.log("Erro ao cadastrar novo veículo:", error);
+    console.log('[postNovoVeiculo] result:', { ok: false, error });
     return { ok: false, error };
   }
 };
