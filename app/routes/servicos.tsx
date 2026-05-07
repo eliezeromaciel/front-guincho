@@ -44,7 +44,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
   if (!clienteId) {
     const novoCliente = await postNovoCliente(clienteNome, enderecoRetirada, enderecoEntrega)
     if (!novoCliente.ok) {
-      return { ok: false as const, error: `Erro ao cadastrar cliente: ${novoCliente.error}` }
+      console.log('[servicos action] erro ao cadastrar cliente:', novoCliente.error)
+      return { ok: false as const, error: 'Erro ao cadastrar cliente. Tente novamente.' }
     }
     clienteId = novoCliente.docRef.id
   }
@@ -56,7 +57,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
     }
     const novoVeiculo = await postNovoVeiculo(veiculoPlaca, modeloVeiculo)
     if (!novoVeiculo.ok) {
-      return { ok: false as const, error: `Erro ao cadastrar veículo: ${novoVeiculo.error}` }
+      console.log('[servicos action] erro ao cadastrar veículo:', novoVeiculo.error)
+      return { ok: false as const, error: 'Erro ao cadastrar veículo. Tente novamente.' }
     }
     veiculoId = novoVeiculo.docRef.id
   }
@@ -67,23 +69,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
   // 4. Cria serviço
   const novoServico = await postNovoServico(clienteId, veiculoId, valorCobrado, quemRecebe, enderecoRetirada, enderecoEntrega)
   if (!novoServico.ok) {
-    return { ok: false as const, error: `Erro ao cadastrar serviço: ${novoServico.error}` }
-  }
-
-  // 5. Notifica o funcionário (HTTP interno para a rota api.notificar)
-  try {
-    const notificarUrl = new URL('/api/notificar', request.url).toString()
-    await fetch(notificarUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        funcionario: quemRecebe,
-        titulo: 'Novo serviço atribuído!',
-        corpo: `Cliente: ${clienteNome} — Retirada: ${enderecoRetirada}`,
-      }),
-    })
-  } catch (error) {
-    console.log('[servicos action] erro ao notificar:', error)
+    console.log('[servicos action] erro ao cadastrar serviço:', novoServico.error)
+    return { ok: false as const, error: 'Erro ao cadastrar serviço. Tente novamente.' }
   }
 
   return { ok: true as const }
