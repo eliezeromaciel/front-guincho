@@ -1,5 +1,6 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
+import { Link } from 'react-router';
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -13,7 +14,7 @@ export default function Home() {
     <div className="bg-white overflow-auto">
       
       <header className="navbar bg-cinzaEscuro navbar-expand-lg navbar-light px-4 rounded-3" >
-        <a href="" className="navbar-brand p-0">
+        <Link to="/" className="navbar-brand p-0">
           <h1 
             style={{
               color: '#FFFFFF',
@@ -21,7 +22,7 @@ export default function Home() {
               margin: 0
             }}
           >GuinchoFácil</h1>
-        </a>
+        </Link>
 
         <button className="navbar-toggler rounded-pill bg-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
           <span className="navbar-toggler-icon"></span>
@@ -44,15 +45,15 @@ export default function Home() {
           <div className="d-flex justify-content-around p-3">
             <div className="d-flex flex-column align-items-center p-3">
               <label>Cliente</label>
-              <a href="/novocliente">
-                <button className="btn btn-secondary p-2"><img src="/app/assets/img/iconecadastrocliente.png" alt="" width={80} /></button>
-              </a>
+              <Link to="/novocliente" className="btn btn-secondary p-2">
+                <img src="/app/assets/img/iconecadastrocliente.png" alt="" width={80} />
+              </Link>
             </div>
             <div className="d-flex flex-column align-items-center p-3">
               <label>Serviço</label>
-              <a href="/novoservico">
-                <button className="btn btn-secondary p-2"><img src="/app/assets/img/guincho.jpg" alt="" width={80} /></button>
-              </a>  
+              <Link to="/novoservico" className="btn btn-secondary p-2">
+                <img src="/app/assets/img/guincho.jpg" alt="" width={80} />
+              </Link>
             </div>
           </div>
           <div className="d-flex justify-content-end">
