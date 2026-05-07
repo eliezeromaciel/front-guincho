@@ -37,6 +37,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const enderecoRetirada = (formData.get('enderecoRetirada') as string) ?? ''
   const enderecoEntrega = (formData.get('enderecoEntrega') as string) ?? ''
 
+  const FUNCIONARIOS_VALIDOS = ['Daniel', 'Gabriel']
+  if (!FUNCIONARIOS_VALIDOS.includes(quemRecebe)) {
+    return { ok: false as const, error: 'Funcionário inválido.' }
+  }
+
   let clienteId = clienteIdRaw
   let veiculoId = veiculoIdRaw
 

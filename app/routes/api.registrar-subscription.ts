@@ -38,6 +38,6 @@ export const action = async ({ request }: { request: Request }) => {
     return Response.json({ ok: true });
   } catch (error) {
     console.log('[registrar-subscription] erro ao salvar:', error);
-    return Response.json({ ok: false, error: String(error) }, { status: 500 });
+    return Response.json({ ok: false, error: 'Erro interno ao registrar.' }, { status: 500 });
   }
 };

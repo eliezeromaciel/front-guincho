@@ -11,7 +11,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const result = await postNovoCliente(nome, endereco, telefone)
   if (!result.ok) {
-    return { ok: false as const, error: String(result.error) }
+    console.log('[clientes action] erro:', result.error)
+    return { ok: false as const, error: 'Erro ao cadastrar cliente. Tente novamente.' }
   }
   return { ok: true as const }
 }

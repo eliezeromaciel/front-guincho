@@ -45,20 +45,3 @@ export const registrarSubscription = async (funcionario: string, pin: string): P
   }
 };
 
-export const enviarNotificacao = async (
-  funcionario: string,
-  titulo: string,
-  corpo: string
-): Promise<void> => {
-  try {
-    const response = await fetch('/api/notificar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ funcionario, titulo, corpo }),
-    });
-    const result = await response.json();
-    console.log('[notificacoes] resultado do envio:', result);
-  } catch (error) {
-    console.log('[notificacoes] erro ao chamar API de notificação:', error);
-  }
-};
