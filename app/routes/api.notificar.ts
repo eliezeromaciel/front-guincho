@@ -1,11 +1,4 @@
-import { adminDb } from '~/services/firebaseAdmin';
-import webpush from 'web-push';
-
-webpush.setVapidDetails(
-  'mailto:eliezermaciel@gmail.com',
-  process.env.VITE_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+import { enviarNotificacaoServidor } from '~/services/webpush.server';
 
 interface NotificarBody {
   funcionario: string;
@@ -14,35 +7,13 @@ interface NotificarBody {
 }
 
 export const action = async ({ request }: { request: Request }) => {
+  const secret = request.headers.get('x-internal-secret');
+  if (!secret || secret !== process.env.INTERNAL_API_SECRET) {
+    return Response.json({ ok: false }, { status: 403 });
+  }
+
   const { funcionario, titulo, corpo } = (await request.json()) as NotificarBody;
 
-  const snap = await adminDb.collection('subscriptions').doc(funcionario.toLowerCase()).get();
-  if (!snap.exists) {
-    console.log('[notificar] subscription não encontrada para:', funcionario);
-    return Response.json(
-      { ok: false, error: 'Funcionário não registrou notificações ainda.' },
-      { status: 404 },
-    );
-  }
-
-  const data = snap.data()!;
-  const subscription: webpush.PushSubscription = {
-    endpoint: data.endpoint as string,
-    keys: {
-      p256dh: data.keys.p256dh as string,
-      auth: data.keys.auth as string,
-    },
-  };
-
-  try {
-    await webpush.sendNotification(
-      subscription,
-      JSON.stringify({ title: titulo, body: corpo, tag: 'novo-servico' }),
-    );
-    console.log('[notificar] notificação enviada para:', funcionario);
-    return Response.json({ ok: true });
-  } catch (error) {
-    console.log('[notificar] erro ao enviar notificação:', error);
-    return Response.json({ ok: false, error: String(error) }, { status: 500 });
-  }
+  await enviarNotificacaoServidor(funcionario, titulo, corpo);
+  return Response.json({ ok: true });
 };

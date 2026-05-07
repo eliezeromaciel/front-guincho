@@ -1,5 +1,6 @@
 import { adminDb } from '~/services/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { enviarNotificacaoServidor } from '~/services/webpush.server';
 
 export const getServicos = async () => {
   try {
@@ -35,6 +36,13 @@ export const postNovoServico = async (
       createdAt: FieldValue.serverTimestamp(),
     });
     console.log('[postNovoServico] result:', { ok: true, docRef });
+
+    await enviarNotificacaoServidor(
+      receiver,
+      'Novo serviço atribuído!',
+      `Retirada: ${pickUpAdress}`,
+    );
+
     return { ok: true, docRef };
   } catch (error) {
     console.log('[postNovoServico] result:', { ok: false, error });
