@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { postNovoVeiculo } from '~/services/veiculos'
+import { requireAuth } from '~/services/session.server'
 import type { Route } from './+types/veiculos'
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  await requireAuth(request);
+  return {};
+};
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData()

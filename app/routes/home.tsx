@@ -1,6 +1,12 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
-import { Link } from 'react-router';
+import { Form, Link } from 'react-router';
+import { requireAuth } from '~/services/session.server';
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  await requireAuth(request);
+  return {};
+};
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -30,7 +36,9 @@ export default function Home() {
         <div className="collapse navbar-collapse" id="navbarCollapse">
           <div className="navbar-nav mx-auto py-0">
             <a href="#trocaSenha" className="nav-item nav-link">Troca Senha</a>
-            <a href="#sair" className="nav-item nav-link">Sair</a>
+            <Form method="post" action="/logout">
+              <button type="submit" className="nav-link btn btn-link">Sair</button>
+            </Form>
           </div>
         </div>
       </header>

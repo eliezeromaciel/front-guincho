@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { postNovoCliente } from '~/services/clientes'
+import { requireAuth } from '~/services/session.server'
 import type { Route } from './+types/clientes'
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  await requireAuth(request);
+  return {};
+};
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData()

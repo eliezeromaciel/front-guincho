@@ -3,6 +3,7 @@ import { useFetcher, useLoaderData } from 'react-router'
 import { getClientes, postNovoCliente, patchCliente } from '~/services/clientes'
 import { getVeiculos, postNovoVeiculo } from '~/services/veiculos'
 import { postNovoServico } from '~/services/servicos'
+import { requireAuth } from '~/services/session.server'
 import type { Route } from './+types/servicos'
 
 type Cliente = {
@@ -19,7 +20,8 @@ type Veiculo = {
   modelo?: string
 }
 
-export const loader = async () => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  await requireAuth(request);
   const clientes = await getClientes()
   const veiculos = await getVeiculos()
   return { clientes, veiculos }
