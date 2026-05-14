@@ -10,6 +10,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
+  await requireAuth(request)
   const formData = await request.formData()
   const nome = formData.get('nome') as string
   const telefone = formData.get('telefone') as string

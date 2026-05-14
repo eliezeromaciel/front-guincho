@@ -28,6 +28,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
+  await requireAuth(request)
   const formData = await request.formData()
   const clienteIdRaw = (formData.get('clienteId') as string) ?? ''
   const clienteNome = formData.get('cliente') as string

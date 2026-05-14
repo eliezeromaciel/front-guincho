@@ -4,13 +4,14 @@ const sessionCookie = createCookie('app_session', {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
-  maxAge: 60 * 60 * 24 * 7, // 7 dias
+  maxAge: 60 * 60 * 24 * 7,
+  secrets: [process.env.SESSION_SECRET!],
 });
 
 export const verificarSessao = async (request: Request): Promise<boolean> => {
   const cookieHeader = request.headers.get('Cookie');
   const valor = await sessionCookie.parse(cookieHeader);
-  return valor === process.env.SESSION_SECRET;
+  return valor === 'authenticated';
 };
 
 export const requireAuth = async (request: Request): Promise<void> => {
@@ -20,7 +21,7 @@ export const requireAuth = async (request: Request): Promise<void> => {
 };
 
 export const criarCookieSessao = async (): Promise<string> => {
-  return sessionCookie.serialize(process.env.SESSION_SECRET!);
+  return sessionCookie.serialize('authenticated');
 };
 
 export const destruirCookieSessao = async (): Promise<string> => {

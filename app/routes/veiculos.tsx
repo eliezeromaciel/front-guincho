@@ -10,6 +10,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
+  await requireAuth(request)
   const formData = await request.formData()
   const placa = formData.get('placa') as string
   const modelo = formData.get('modelo') as string
