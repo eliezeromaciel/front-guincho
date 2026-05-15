@@ -1,11 +1,16 @@
 import { createCookie, redirect } from 'react-router';
 
+const secret = process.env.SESSION_SECRET;
+if (!secret) {
+  throw new Error('SESSION_SECRET não definido. Configure a variável de ambiente.');
+}
+
 const sessionCookie = createCookie('app_session', {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
   maxAge: 60 * 60 * 24 * 7,
-  secrets: [process.env.SESSION_SECRET!],
+  secrets: [secret],
 });
 
 export const verificarSessao = async (request: Request): Promise<boolean> => {
