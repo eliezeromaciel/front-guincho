@@ -12,14 +12,28 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData();
-  const login = (formData.get('login') as string)?.trim();
-  const senha = (formData.get('senha') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
+  const senha = formData.get('senha') as string;
 
-  if (login !== process.env.APP_LOGIN || senha !== process.env.APP_PASSWORD) {
-    return { ok: false as const, error: 'Login ou senha incorretos.' };
+  const apiKey = process.env.FIREBASE_WEB_API_KEY;
+  if (!apiKey) return { ok: false as const, error: 'Configuração do servidor incompleta.' };
+
+  const resposta = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: senha, returnSecureToken: true }),
+    },
+  );
+
+  if (!resposta.ok) {
+    console.log('[login] falha na autenticação Firebase — status:', resposta.status);
+    return { ok: false as const, error: 'E-mail ou senha incorretos.' };
   }
 
-  const cookieHeader = await criarCookieSessao();
+  const { idToken } = (await resposta.json()) as { idToken: string };
+  const cookieHeader = await criarCookieSessao(idToken);
   return redirect('/', { headers: { 'Set-Cookie': cookieHeader } });
 };
 
@@ -37,12 +51,12 @@ export default function Login() {
 
         <fetcher.Form method="post">
           <div className="mb-3">
-            <label className="form-label fw-semibold">Login</label>
+            <label className="form-label fw-semibold">E-mail</label>
             <input
               className="form-control form-control-lg"
-              type="text"
-              name="login"
-              autoComplete="username"
+              type="email"
+              name="email"
+              autoComplete="email"
               autoFocus
               required
             />

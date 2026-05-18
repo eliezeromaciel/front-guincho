@@ -8,11 +8,26 @@ import {
 } from "react-router";
 import { useEffect } from "react";
 import type { Route } from "./+types/root";
-import SeletorFuncionario from "./components/SeletorFuncionario";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import "./app.css";
+
+export const headers = () => ({
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=()',
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "connect-src 'self' https://fcm.googleapis.com",
+    "img-src 'self' data:",
+    "frame-ancestors 'none'",
+  ].join('; '),
+});
 
 export const links: Route.LinksFunction = () => [
   { rel: "manifest", href: "/manifest.json" },
@@ -64,12 +79,7 @@ export default function App() {
     }
   }, []);
 
-  return (
-    <>
-      <SeletorFuncionario />
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

@@ -5,10 +5,10 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
-export const registrarSubscription = async (funcionario: string, pin: string): Promise<boolean> => {
+export const registrarSubscriptionAutomaticamente = async (): Promise<void> => {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.log('[notificacoes] Push não suportado neste dispositivo');
-    return false;
+    return;
   }
 
   try {
@@ -16,7 +16,7 @@ export const registrarSubscription = async (funcionario: string, pin: string): P
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.log('[notificacoes] permissão negada pelo usuário');
-      return false;
+      return;
     }
 
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
@@ -29,19 +29,12 @@ export const registrarSubscription = async (funcionario: string, pin: string): P
     const response = await fetch('/api/registrar-subscription', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        funcionario,
-        pin,
-        subscription: { endpoint: sub.endpoint, keys: sub.keys },
-      }),
+      body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys }),
     });
 
     const result = await response.json();
     console.log('[notificacoes] resultado do registro:', result);
-    return result.ok === true;
   } catch (error) {
     console.log('[notificacoes] erro ao registrar subscription:', error);
-    return false;
   }
 };
-

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { postNovoVeiculo } from '~/services/veiculos'
-import { requireAuth } from '~/services/session.server'
+import { requireAuth, requireAdmin } from '~/services/session.server'
 import type { Route } from './+types/veiculos'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -10,13 +10,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireAuth(request)
+  await requireAdmin(request)
   const formData = await request.formData()
-  const placa = formData.get('placa') as string
-  const modelo = formData.get('modelo') as string
+  const placa = ((formData.get('placa') as string | null) ?? '').trim()
+  const modelo = ((formData.get('modelo') as string | null) ?? '').trim()
 
-  if (placa.length !== 7) {
-    return { ok: false as const, error: 'Placa incompleta' }
+  if (!modelo || modelo.length > 30)
+    return { ok: false as const, error: 'Modelo inválido.' }
+
+  const PLACA_MERCOSUL = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/
+  if (!PLACA_MERCOSUL.test(placa)) {
+    return { ok: false as const, error: 'Placa inválida.' }
   }
 
   const result = await postNovoVeiculo(placa, modelo)

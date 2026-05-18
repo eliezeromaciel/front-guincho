@@ -3,7 +3,9 @@ import { useFetcher, useLoaderData } from 'react-router'
 import { getClientes, postNovoCliente, patchCliente } from '~/services/clientes'
 import { getVeiculos, postNovoVeiculo } from '~/services/veiculos'
 import { postNovoServico } from '~/services/servicos'
-import { requireAuth } from '~/services/session.server'
+import { requireAuth, requireAdmin } from '~/services/session.server'
+import { adminAuth } from '~/services/firebaseAdmin'
+import { enviarNotificacaoServidor } from '~/services/webpush.server'
 import type { Route } from './+types/servicos'
 
 type Cliente = {
@@ -20,35 +22,65 @@ type Veiculo = {
   modelo?: string
 }
 
+type Usuario = {
+  uid: string
+  displayName: string
+}
+
 export const loader = async ({ request }: Route.LoaderArgs) => {
   await requireAuth(request);
-  const clientes = await getClientes()
-  const veiculos = await getVeiculos()
-  return { clientes, veiculos }
+  const [clientes, veiculos, listaUsuarios] = await Promise.all([
+    getClientes(),
+    getVeiculos(),
+    adminAuth.listUsers(),
+  ]);
+  const usuarios: Usuario[] = listaUsuarios.users
+    .filter((u) => u.displayName)
+    .map((u) => ({ uid: u.uid, displayName: u.displayName! }));
+  return { clientes, veiculos, usuarios }
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireAuth(request)
+  await requireAdmin(request)
   const formData = await request.formData()
-  const clienteIdRaw = (formData.get('clienteId') as string) ?? ''
-  const clienteNome = formData.get('cliente') as string
-  const veiculoIdRaw = (formData.get('veiculoId') as string) ?? ''
-  const veiculoPlaca = formData.get('veiculo') as string
-  const modeloVeiculo = (formData.get('modeloveiculo') as string) ?? ''
-  const valorCobrado = (formData.get('valorCobrado') as string) ?? ''
-  const quemRecebe = formData.get('quemRecebe') as string
-  const enderecoRetirada = (formData.get('enderecoRetirada') as string) ?? ''
-  const enderecoEntrega = (formData.get('enderecoEntrega') as string) ?? ''
+  const clienteIdRaw = ((formData.get('clienteId') as string | null) ?? '').trim()
+  const clienteNome = ((formData.get('cliente') as string | null) ?? '').trim()
+  const veiculoIdRaw = ((formData.get('veiculoId') as string | null) ?? '').trim()
+  const veiculoPlaca = ((formData.get('veiculo') as string | null) ?? '').trim()
+  const modeloVeiculo = ((formData.get('modeloveiculo') as string | null) ?? '').trim()
+  const valorCobradoRaw = ((formData.get('valorCobrado') as string | null) ?? '').trim()
+  const quemRecebeUid = ((formData.get('quemRecebeUid') as string | null) ?? '').trim()
+  const quemRecebeNome = ((formData.get('quemRecebe') as string | null) ?? '').trim()
+  const enderecoRetirada = ((formData.get('enderecoRetirada') as string | null) ?? '').trim()
+  const enderecoEntrega = ((formData.get('enderecoEntrega') as string | null) ?? '').trim()
 
-  const FUNCIONARIOS_VALIDOS = ['Daniel', 'Gabriel']
-  if (!FUNCIONARIOS_VALIDOS.includes(quemRecebe)) {
+  if (!clienteNome || clienteNome.length > 30)
+    return { ok: false as const, error: 'Nome do cliente inválido.' }
+  if (!enderecoRetirada || enderecoRetirada.length > 300)
+    return { ok: false as const, error: 'Endereço de retirada inválido.' }
+  if (!enderecoEntrega || enderecoEntrega.length > 300)
+    return { ok: false as const, error: 'Endereço de entrega inválido.' }
+
+  if (!quemRecebeUid || !quemRecebeNome) {
+    return { ok: false as const, error: 'Selecione quem receberá o serviço.' }
+  }
+
+  let userRecord;
+  try {
+    userRecord = await adminAuth.getUser(quemRecebeUid)
+  } catch {
     return { ok: false as const, error: 'Funcionário inválido.' }
+  }
+  const quemRecebeNomeVerificado = userRecord.displayName ?? quemRecebeUid
+
+  const valorCobradoNum = parseInt(valorCobradoRaw, 10)
+  if (isNaN(valorCobradoNum) || valorCobradoNum <= 0 || valorCobradoNum > 9999) {
+    return { ok: false as const, error: 'Valor cobrado inválido.' }
   }
 
   let clienteId = clienteIdRaw
   let veiculoId = veiculoIdRaw
 
-  // 1. Cria cliente se não existir
   if (!clienteId) {
     const novoCliente = await postNovoCliente(clienteNome, enderecoRetirada, enderecoEntrega)
     if (!novoCliente.ok) {
@@ -58,10 +90,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     clienteId = novoCliente.docRef.id
   }
 
-  // 2. Cria veículo se não existir
   if (!veiculoId) {
-    if (!veiculoPlaca || veiculoPlaca.length !== 7) {
-      return { ok: false as const, error: 'Placa incompleta' }
+    const PLACA_MERCOSUL = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/
+    if (!veiculoPlaca || !PLACA_MERCOSUL.test(veiculoPlaca)) {
+      return { ok: false as const, error: 'Placa inválida.' }
     }
     const novoVeiculo = await postNovoVeiculo(veiculoPlaca, modeloVeiculo)
     if (!novoVeiculo.ok) {
@@ -71,27 +103,38 @@ export const action = async ({ request }: Route.ActionArgs) => {
     veiculoId = novoVeiculo.docRef.id
   }
 
-  // 3. Atualiza endereços do cliente
-  await patchCliente(clienteId, enderecoRetirada, enderecoEntrega)
+  if (clienteId) {
+    const patchResult = await patchCliente(clienteId, enderecoRetirada, enderecoEntrega)
+    if (!patchResult?.ok) {
+      console.log('[servicos action] erro ao atualizar cliente:', clienteId)
+      return { ok: false as const, error: 'Erro ao atualizar dados do cliente.' }
+    }
+  }
 
-  // 4. Cria serviço
-  const novoServico = await postNovoServico(clienteId, veiculoId, valorCobrado, quemRecebe, enderecoRetirada, enderecoEntrega)
+  const novoServico = await postNovoServico(clienteId, veiculoId, valorCobradoNum, quemRecebeNomeVerificado, enderecoRetirada, enderecoEntrega)
   if (!novoServico.ok) {
     console.log('[servicos action] erro ao cadastrar serviço:', novoServico.error)
     return { ok: false as const, error: 'Erro ao cadastrar serviço. Tente novamente.' }
   }
 
+  await enviarNotificacaoServidor(
+    quemRecebeUid,
+    'Novo serviço atribuído',
+    `Cliente: ${clienteNome} — ${enderecoRetirada}`,
+  )
+
   return { ok: true as const }
 }
 
 export default function Servicos() {
-  const { clientes, veiculos } = useLoaderData<typeof loader>()
+  const { clientes, veiculos, usuarios } = useLoaderData<typeof loader>()
   const fetcher = useFetcher<typeof action>()
   const wasSubmitting = useRef(false)
 
   const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([])
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | undefined>()
   const [quemRecebe, setQuemRecebe] = useState<string>('')
+  const [quemRecebeUid, setQuemRecebeUid] = useState<string>('')
   const [showOptions, setShowOptions] = useState(false)
   const [veiculosFiltrados, setVeiculosFiltrados] = useState<Veiculo[]>([])
   const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | undefined>()
@@ -138,8 +181,6 @@ export default function Servicos() {
     setModeloVeiculo('')
   }
 
-  const listaQuemRecebe = ['Daniel', 'Gabriel']
-
   const handleClienteSelected = (elem: Cliente) => {
     setClienteSelecionado(elem)
     setClientesFiltrados([])
@@ -168,6 +209,7 @@ export default function Servicos() {
     setClienteSelecionado({ nome: '' })
     setClientesFiltrados([])
     setQuemRecebe('')
+    setQuemRecebeUid('')
     setVeiculosFiltrados([])
     setVeiculoSelecionado({ placa: '' })
     setModeloVeiculo('')
@@ -201,7 +243,7 @@ export default function Servicos() {
               method="post"
               className="needs-validation"
               onSubmit={(e) => {
-                if (quemRecebe.length <= 0) {
+                if (!quemRecebeUid) {
                   e.preventDefault()
                   alert('Escolha quem irá receber.')
                 } else if (!veiculoSelecionado?.id && (!veiculoSelecionado?.placa || veiculoSelecionado.placa.length !== 7)) {
@@ -210,9 +252,9 @@ export default function Servicos() {
                 }
               }}
             >
-              {/* IDs ocultos — preenchidos quando o usuário seleciona do autocomplete */}
               <input type="hidden" name="clienteId" value={clienteSelecionado?.id ?? ''} />
               <input type="hidden" name="veiculoId" value={veiculoSelecionado?.id ?? ''} />
+              <input type="hidden" name="quemRecebeUid" value={quemRecebeUid} />
 
               {/* cliente label */}
               <div className="mb-3">
@@ -310,9 +352,9 @@ export default function Servicos() {
               <div className="mb-3">
                 <input
                   className="form-control"
-                  type="text"
+                  type="tel"
                   name="valorCobrado"
-                  placeholder="ex: 200,00"
+                  placeholder="ex: 200"
                   maxLength={4}
                   required
                   onInput={(e) => {
@@ -370,16 +412,17 @@ export default function Servicos() {
                       cursor: 'pointer',
                     }}
                   >
-                    {listaQuemRecebe.map((item, index) => (
+                    {(usuarios as Usuario[]).map((u) => (
                       <div
-                        key={index}
+                        key={u.uid}
                         className="p-2 option-hover"
                         onClick={() => {
-                          setQuemRecebe(item)
+                          setQuemRecebe(u.displayName)
+                          setQuemRecebeUid(u.uid)
                           setShowOptions(false)
                         }}
                       >
-                        {item}
+                        {u.displayName}
                       </div>
                     ))}
                   </div>

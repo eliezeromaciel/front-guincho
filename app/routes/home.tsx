@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
 import { Form, Link } from 'react-router';
 import { requireAuth } from '~/services/session.server';
+import { registrarSubscriptionAutomaticamente } from '~/services/notificacoes';
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   await requireAuth(request);
@@ -16,6 +17,10 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
+  useEffect(() => {
+    registrarSubscriptionAutomaticamente();
+  }, []);
+
   return (
     <div className="bg-white overflow-auto">
       

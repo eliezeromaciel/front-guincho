@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { postNovoCliente } from '~/services/clientes'
-import { requireAuth } from '~/services/session.server'
+import { requireAuth, requireAdmin } from '~/services/session.server'
 import type { Route } from './+types/clientes'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -10,11 +10,18 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireAuth(request)
+  await requireAdmin(request)
   const formData = await request.formData()
-  const nome = formData.get('nome') as string
-  const telefone = formData.get('telefone') as string
-  const endereco = formData.get('endereco') as string
+  const nome = ((formData.get('nome') as string | null) ?? '').trim()
+  const telefone = ((formData.get('telefone') as string | null) ?? '').trim()
+  const endereco = ((formData.get('endereco') as string | null) ?? '').trim()
+
+  if (!nome || nome.length > 30)
+    return { ok: false as const, error: 'Nome inválido.' }
+  if (!telefone || telefone.length > 20)
+    return { ok: false as const, error: 'Telefone inválido.' }
+  if (!endereco || endereco.length > 80)
+    return { ok: false as const, error: 'Endereço inválido.' }
 
   const result = await postNovoCliente(nome, endereco, telefone)
   if (!result.ok) {

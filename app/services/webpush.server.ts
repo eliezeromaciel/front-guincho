@@ -1,20 +1,24 @@
 import webpush from 'web-push';
 import { adminDb } from '~/services/firebaseAdmin';
 
-webpush.setVapidDetails(
-  'mailto:eliezermaciel@gmail.com',
-  process.env.VITE_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+const vapidContact = process.env.VAPID_CONTACT;
+const vapidPublicKey = process.env.VITE_VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+if (!vapidContact || !vapidPublicKey || !vapidPrivateKey) {
+  throw new Error('[webpush] VAPID_CONTACT, VITE_VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY são obrigatórias.');
+}
+
+webpush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
 
 export const enviarNotificacaoServidor = async (
-  funcionario: string,
+  uid: string,
   titulo: string,
   corpo: string,
 ): Promise<void> => {
-  const snap = await adminDb.collection('subscriptions').doc(funcionario.toLowerCase()).get();
+  const snap = await adminDb.collection('subscriptions').doc(uid).get();
   if (!snap.exists) {
-    console.log('[webpush] subscription não encontrada para:', funcionario);
+    console.log('[webpush] subscription não encontrada para uid:', uid);
     return;
   }
 
@@ -32,8 +36,8 @@ export const enviarNotificacaoServidor = async (
       subscription,
       JSON.stringify({ title: titulo, body: corpo, tag: 'novo-servico' }),
     );
-    console.log('[webpush] notificação enviada para:', funcionario);
+    console.log('[webpush] notificação enviada para uid:', uid);
   } catch (error) {
-    console.log('[webpush] erro ao enviar notificação para:', funcionario, error);
+    console.log('[webpush] erro ao enviar notificação para uid:', uid, error);
   }
 };

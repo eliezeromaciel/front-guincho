@@ -2,7 +2,8 @@ self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener('push', (e) => {
-  const data = e.data ? e.data.json() : {};
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { data = { title: 'GuinchoFácil', body: 'Nova notificação.' }; }
   const title = data.title || 'GuinchoFácil';
   const options = {
     body: data.body || '',
