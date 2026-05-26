@@ -1,6 +1,6 @@
 import { useFetcher } from 'react-router';
 import { redirect } from 'react-router';
-import { criarCookieSessao, verificarSessao } from '~/services/session.server';
+import { validarECriarSessao, verificarSessao } from '~/services/session.server';
 import type { Route } from './+types/login';
 
 export const meta = () => [{ title: 'Login — GuinchoFácil' }];
@@ -33,8 +33,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const { idToken } = (await resposta.json()) as { idToken: string };
-  const cookieHeader = await criarCookieSessao(idToken);
-  return redirect('/', { headers: { 'Set-Cookie': cookieHeader } });
+  const resultado = await validarECriarSessao(idToken);
+  if (!resultado.ok) return { ok: false as const, error: resultado.error };
+  return redirect('/', { headers: { 'Set-Cookie': resultado.cookieHeader } });
 };
 
 export default function Login() {

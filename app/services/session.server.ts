@@ -1,5 +1,10 @@
 import { redirect } from 'react-router';
-import { adminAuth } from './firebaseAdmin';
+import { adminAuth, adminDb } from './firebaseAdmin';
+
+interface FuncionarioDoc {
+  role?: string;
+  nome?: string;
+}
 
 const COOKIE_NAME = 'app_session';
 const DURACAO_MS = 60 * 60 * 24 * 7 * 1000;
@@ -22,9 +27,27 @@ const extrairCookie = (request: Request): string | null => {
   return match ? match[1] : null;
 };
 
-export const criarCookieSessao = async (idToken: string): Promise<string> => {
+const criarCookieSessao = async (idToken: string): Promise<string> => {
   const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: DURACAO_MS });
   return cookieHeader(sessionCookie, DURACAO_MS / 1000);
+};
+
+export const validarECriarSessao = async (
+  idToken: string,
+): Promise<{ ok: true; cookieHeader: string } | { ok: false; error: string }> => {
+  try {
+    const decoded = await adminAuth.verifyIdToken(idToken);
+    const snap = await adminDb.collection('funcionarios').doc(decoded.uid).get();
+    if (!snap.exists) return { ok: false, error: 'Usuário sem permissão de acesso.' };
+    const data = snap.data() as FuncionarioDoc;
+    if (data.role !== 'admin' && data.role !== 'readonly') {
+      return { ok: false, error: 'Usuário sem permissão de acesso.' };
+    }
+    const cookie = await criarCookieSessao(idToken);
+    return { ok: true, cookieHeader: cookie };
+  } catch {
+    return { ok: false, error: 'Erro ao processar o acesso.' };
+  }
 };
 
 export const verificarSessao = async (request: Request): Promise<SessaoUsuario | null> => {
@@ -32,12 +55,18 @@ export const verificarSessao = async (request: Request): Promise<SessaoUsuario |
   if (!token) return null;
   try {
     const decoded = await adminAuth.verifySessionCookie(token, true);
-    const role = decoded['role'];
+
+    const snap = await adminDb.collection('funcionarios').doc(decoded.uid).get();
+    if (!snap.exists) return null;
+
+    const data = snap.data() as FuncionarioDoc;
+    const role = data.role;
     if (role !== 'admin' && role !== 'readonly') return null;
+
     return {
       uid: decoded.uid,
       email: decoded.email ?? '',
-      displayName: (decoded['name'] as string) ?? decoded.email ?? '',
+      displayName: data.nome ?? decoded.email ?? '',
       role,
     };
   } catch {
