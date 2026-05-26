@@ -4,7 +4,7 @@ import { getClientes, postNovoCliente, patchCliente } from '~/services/clientes'
 import { getVeiculos, postNovoVeiculo } from '~/services/veiculos'
 import { postNovoServico } from '~/services/servicos'
 import { requireAuth, requireAdmin } from '~/services/session.server'
-import { adminAuth } from '~/services/firebaseAdmin'
+import { adminAuth, adminDb } from '~/services/firebaseAdmin'
 import { enviarNotificacaoServidor } from '~/services/webpush.server'
 import type { Route } from './+types/servicos'
 
@@ -29,14 +29,15 @@ type Usuario = {
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   await requireAuth(request);
-  const [clientes, veiculos, listaUsuarios] = await Promise.all([
+  const [clientes, veiculos, funcionariosSnap] = await Promise.all([
     getClientes(),
     getVeiculos(),
-    adminAuth.listUsers(),
+    adminDb.collection('funcionarios').get(),
   ]);
-  const usuarios: Usuario[] = listaUsuarios.users
-    .filter((u) => u.displayName)
-    .map((u) => ({ uid: u.uid, displayName: u.displayName! }));
+  const usuarios: Usuario[] = funcionariosSnap.docs.flatMap((doc) => {
+    const data = doc.data() as { nome?: string };
+    return data.nome ? [{ uid: doc.id, displayName: data.nome }] : [];
+  });
   return { clientes, veiculos, usuarios }
 }
 
@@ -82,7 +83,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   let veiculoId = veiculoIdRaw
 
   if (!clienteId) {
-    const novoCliente = await postNovoCliente(clienteNome, enderecoRetirada, enderecoEntrega)
+    const novoCliente = await postNovoCliente(clienteNome, undefined, undefined, enderecoEntrega, enderecoRetirada)
     if (!novoCliente.ok) {
       console.log('[servicos action] erro ao cadastrar cliente:', novoCliente.error)
       return { ok: false as const, error: 'Erro ao cadastrar cliente. Tente novamente.' }

@@ -28,16 +28,18 @@ type PostClienteError = {
 
 export const postNovoCliente = async (
   name: string,
-  pickupAdress?: string,
-  deliveryAdress?: string,
   phone?: string,
+  endereco?: string,
+  deliveryAdress?: string,
+  pickupAdress?: string,
 ): Promise<PostClienteSuccess | PostClienteError> => {
   try {
     const docRef = await adminDb.collection('clientes').add({
       nome: name,
-      enderecoRetirada: pickupAdress,
-      enderecoEntrega: deliveryAdress || '',
       telefone: phone || '',
+      endereco: endereco || '',
+      enderecoEntrega: deliveryAdress || '',
+      enderecoRetirada: pickupAdress || '',
     });
     console.log('[postNovoCliente] result:', { ok: true, docRef });
     return { ok: true, docRef };
