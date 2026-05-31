@@ -33,8 +33,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return { ok: false as const, error: 'Forneça uma descrição detalhada da despesa.' };
   }
 
-  if (!dataPagamento) {
-    return { ok: false as const, error: 'Insira a data do pagamento da despesa.' };
+  const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dataPagamento || !ISO_DATE.test(dataPagamento) || isNaN(Date.parse(dataPagamento))) {
+    return { ok: false as const, error: 'Data de pagamento inválida.' };
   }
 
   const parcelas = parseInt(parcelasRaw, 10);
