@@ -32,9 +32,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const sessao = await requireAuth(request);
   const formData = await request.formData();
   const intent = formData.get('intent') as 'upload_foto' | 'finalizar';
-  const servicoId = formData.get('servicoId') as string;
+  const servicoId = ((formData.get('servicoId') as string) ?? '').trim();
 
-  if (!servicoId) return { ok: false, error: 'ID do serviço inválido.' };
+  // IDs gerados pelo Firestore são alfanuméricos com 20 caracteres.
+  // Rejeitar qualquer coisa fora desse formato antes de tocar no banco.
+  if (!servicoId || !/^[a-zA-Z0-9]{10,}$/.test(servicoId)) {
+    return { ok: false, error: 'ID do serviço inválido.' };
+  }
 
   // Verifica propriedade do serviço antes de qualquer ação (evita IDOR)
   const { adminDb } = await import('~/services/firebaseAdmin');
