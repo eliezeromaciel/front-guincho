@@ -45,8 +45,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const result = await postNovoFuncionario(nome, email, senha, role, motorista);
   if (!result.ok) {
-    console.log('[cadastro-usuario action] erro:', result.error);
-    return { ok: false as const, error: 'Erro ao criar usuário. Verifique se o e-mail já está cadastrado.' };
+    return { ok: false as const, error: result.error };
   }
 
   return { ok: true as const };

@@ -57,7 +57,7 @@ export const postNovoFuncionario = async (
   senha: string,
   role: 'admin' | 'readonly',
   motorista: 'A' | 'B' | 'C' | 'none'
-): Promise<{ ok: true; uid: string } | { ok: false; error: unknown }> => {
+): Promise<{ ok: true; uid: string } | { ok: false; error: string }> => {
   try {
     // 1. Criar no Firebase Auth
     const userRecord = await adminAuth.createUser({
@@ -78,7 +78,12 @@ export const postNovoFuncionario = async (
     return { ok: true as const, uid: userRecord.uid };
   } catch (error: any) {
     console.error('[postNovoFuncionario] erro:', error?.code ?? 'unknown');
-    return { ok: false as const, error };
+    const mensagem =
+      error?.code === 'auth/email-already-exists' ? 'E-mail já cadastrado.' :
+      error?.code === 'auth/invalid-email'        ? 'E-mail inválido.' :
+      error?.code === 'auth/weak-password'        ? 'Senha muito fraca.' :
+      'Erro ao criar usuário.';
+    return { ok: false as const, error: mensagem };
   }
 };
 
