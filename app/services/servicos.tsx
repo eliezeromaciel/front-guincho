@@ -98,6 +98,7 @@ export const getFotosServico = async (servicoId: string): Promise<string[]> => {
       .doc(servicoId)
       .collection('fotos')
       .orderBy('uploadedAt', 'asc')
+      .limit(4)
       .get();
     
     const result = snapshot.docs.map((doc) => doc.data().base64 as string);
@@ -111,6 +112,10 @@ export const getFotosServico = async (servicoId: string): Promise<string[]> => {
 export const uploadFotoServico = async (servicoId: string, base64: string) => {
   try {
     const subcollRef = adminDb.collection('servicos').doc(servicoId).collection('fotos');
+    const existing = await subcollRef.count().get();
+    if (existing.data().count >= 4) {
+      return { ok: false as const, error: 'Limite de 4 fotos já atingido.' };
+    }
     await subcollRef.add({
       base64,
       uploadedAt: FieldValue.serverTimestamp(),

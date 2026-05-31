@@ -53,6 +53,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const veiculoIdRaw = ((formData.get('veiculoId') as string | null) ?? '').trim();
   const veiculoPlaca = ((formData.get('veiculo') as string | null) ?? '').trim();
   const detalhesVeiculo = ((formData.get('detalhesVeiculo') as string | null) ?? '').trim();
+  if (!detalhesVeiculo || detalhesVeiculo.length < 2 || detalhesVeiculo.length > 100) {
+    return { ok: false as const, error: 'Detalhes do veículo inválidos (2 a 100 caracteres).' };
+  }
   const valorCobradoRaw = ((formData.get('valorCobrado') as string | null) ?? '').trim();
   
   const quemRecebeUid = ((formData.get('quemRecebeUid') as string | null) ?? '').trim();

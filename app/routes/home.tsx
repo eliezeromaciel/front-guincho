@@ -86,7 +86,7 @@ export default function Home() {
     if (fetcher.state === 'idle' && wasSubmitting.current) {
       wasSubmitting.current = false;
       setCarregandoFoto(false);
-      const res = fetcher.data as any;
+      const res = fetcher.data as { ok: boolean; error?: string; totalFotos?: number } | undefined;
       if (res?.ok) {
         if (res.totalFotos !== undefined) {
           alert(`Foto carregada com sucesso! (${res.totalFotos} de 4)`);
@@ -173,7 +173,7 @@ export default function Home() {
                   className="img-fluid rounded-3 border mb-2 border-secondary shadow"
                   style={{ height: '100px' }}
                   onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1563013544-824ae1d704d3?w=150&auto=format&fit=crop&q=80';
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
               </div>
