@@ -27,10 +27,10 @@ export const getServicos = async (): Promise<Servico[]> => {
       id: elem.id,
       ...elem.data(),
     })) as Servico[];
-    console.log('[getServicos] result:', result.length, 'docs');
+    if (process.env.NODE_ENV === 'development') console.log('[getServicos] result:', result.length, 'docs');
     return result;
-  } catch (error) {
-    console.log('[getServicos] erro:', error);
+  } catch (error: any) {
+    console.error('[getServicos] erro:', error?.code ?? 'unknown');
   }
   return [];
 };
@@ -65,10 +65,10 @@ export const postNovoServico = async (
       fotosEnviadas: false,
       createdAt: FieldValue.serverTimestamp(),
     });
-    console.log('[postNovoServico] result:', { ok: true, docRef });
+    if (process.env.NODE_ENV === 'development') console.log('[postNovoServico] result: ok');
     return { ok: true, docRef };
-  } catch (error) {
-    console.log('[postNovoServico] result:', { ok: false, error });
+  } catch (error: any) {
+    console.error('[postNovoServico] erro:', error?.code ?? 'unknown');
     return { ok: false, error };
   }
 };
@@ -85,8 +85,8 @@ export const getServicoAtivoMotorista = async (motoristaUid: string): Promise<Se
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     return { id: doc.id, ...doc.data() } as Servico;
-  } catch (error) {
-    console.log('[getServicoAtivoMotorista] erro:', error);
+  } catch (error: any) {
+    console.error('[getServicoAtivoMotorista] erro:', error?.code ?? 'unknown');
     return null;
   }
 };
@@ -103,8 +103,8 @@ export const getFotosServico = async (servicoId: string): Promise<string[]> => {
     
     const result = snapshot.docs.map((doc) => doc.data().base64 as string);
     return result;
-  } catch (error) {
-    console.log('[getFotosServico] erro:', error);
+  } catch (error: any) {
+    console.error('[getFotosServico] erro:', error?.code ?? 'unknown');
     return [];
   }
 };
@@ -131,10 +131,10 @@ export const uploadFotoServico = async (servicoId: string, base64: string) => {
       });
     }
 
-    console.log('[uploadFotoServico] adicionada foto para:', servicoId, 'total:', totalFotos);
+    if (process.env.NODE_ENV === 'development') console.log('[uploadFotoServico] total:', totalFotos);
     return { ok: true, totalFotos };
-  } catch (error) {
-    console.log('[uploadFotoServico] erro:', error);
+  } catch (error: any) {
+    console.error('[uploadFotoServico] erro:', error?.code ?? 'unknown');
     return { ok: false, error };
   }
 };
@@ -145,10 +145,10 @@ export const finalizarServico = async (servicoId: string) => {
       status: 'concluido',
       finalizedAt: FieldValue.serverTimestamp(),
     });
-    console.log('[finalizarServico] servico finalizado:', servicoId);
+    if (process.env.NODE_ENV === 'development') console.log('[finalizarServico] ok');
     return { ok: true };
-  } catch (error) {
-    console.log('[finalizarServico] erro:', error);
+  } catch (error: any) {
+    console.error('[finalizarServico] erro:', error?.code ?? 'unknown');
     return { ok: false, error };
   }
 };

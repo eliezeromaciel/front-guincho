@@ -18,10 +18,10 @@ interface FuncionarioDoc {
 export const verificarFuncionarioExiste = async (uid: string): Promise<boolean> => {
   try {
     const snap = await adminDb.collection('funcionarios').doc(uid).get();
-    console.log('[verificarFuncionarioExiste] uid:', uid, 'exists:', snap.exists);
+    if (process.env.NODE_ENV === 'development') console.log('[verificarFuncionarioExiste] exists:', snap.exists);
     return snap.exists;
-  } catch (error) {
-    console.log('[verificarFuncionarioExiste] erro:', error);
+  } catch (error: any) {
+    console.error('[verificarFuncionarioExiste] erro:', error?.code ?? 'unknown');
     return false;
   }
 };
@@ -43,10 +43,10 @@ export const getFuncionarios = async (): Promise<Funcionario[]> => {
           ]
         : [];
     });
-    console.log('[getFuncionarios] result:', result.length, 'docs');
+    if (process.env.NODE_ENV === 'development') console.log('[getFuncionarios] result:', result.length, 'docs');
     return result;
-  } catch (error) {
-    console.log('[getFuncionarios] erro:', error);
+  } catch (error: any) {
+    console.error('[getFuncionarios] erro:', error?.code ?? 'unknown');
     return [];
   }
 };
@@ -74,13 +74,11 @@ export const postNovoFuncionario = async (
       motorista,
     });
 
-    const result = { ok: true as const, uid: userRecord.uid };
-    console.log('[postNovoFuncionario] cadastrado com sucesso:', result);
-    return result;
-  } catch (error) {
-    const result = { ok: false as const, error };
-    console.log('[postNovoFuncionario] erro ao cadastrar:', result);
-    return result;
+    if (process.env.NODE_ENV === 'development') console.log('[postNovoFuncionario] cadastrado com sucesso');
+    return { ok: true as const, uid: userRecord.uid };
+  } catch (error: any) {
+    console.error('[postNovoFuncionario] erro:', error?.code ?? 'unknown');
+    return { ok: false as const, error };
   }
 };
 

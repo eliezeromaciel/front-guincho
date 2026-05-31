@@ -27,10 +27,10 @@ export const getDespesas = async (): Promise<Despesa[]> => {
         valorParcela: data.valorParcela || data.valorTotal,
       } as Despesa;
     });
-    console.log('[getDespesas] result:', result.length, 'docs');
+    if (process.env.NODE_ENV === 'development') console.log('[getDespesas] result:', result.length, 'docs');
     return result;
-  } catch (error) {
-    console.log('[getDespesas] erro:', error);
+  } catch (error: any) {
+    console.error('[getDespesas] erro:', error?.code ?? 'unknown');
     return [];
   }
 };
@@ -53,10 +53,10 @@ export const postNovaDespesa = async (
       valorParcela,
       createdAt: FieldValue.serverTimestamp(),
     });
-    console.log('[postNovaDespesa] result:', { ok: true, id: docRef.id });
+    if (process.env.NODE_ENV === 'development') console.log('[postNovaDespesa] result: ok');
     return { ok: true, docRef };
-  } catch (error) {
-    console.log('[postNovaDespesa] erro:', error);
+  } catch (error: any) {
+    console.error('[postNovaDespesa] erro:', error?.code ?? 'unknown');
     return { ok: false, error };
   }
 };
