@@ -56,6 +56,9 @@ export const verificarSessao = async (request: Request): Promise<SessaoUsuario |
   try {
     const decoded = await adminAuth.verifySessionCookie(token, true);
 
+    const userRecord = await adminAuth.getUser(decoded.uid);
+    if (userRecord.disabled) return null;
+
     const snap = await adminDb.collection('funcionarios').doc(decoded.uid).get();
     if (!snap.exists) return null;
 
