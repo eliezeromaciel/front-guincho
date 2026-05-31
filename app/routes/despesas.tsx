@@ -29,8 +29,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return { ok: false as const, error: 'Insira um valor de custo válido.' };
   }
 
-  if (!descricao || descricao.length < 2) {
-    return { ok: false as const, error: 'Forneça uma descrição detalhada da despesa.' };
+  if (!descricao || descricao.length < 2 || descricao.length > 100) {
+    return { ok: false as const, error: 'Descrição deve ter entre 2 e 100 caracteres.' };
   }
 
   const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
