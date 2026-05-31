@@ -59,6 +59,12 @@ export const verificarSessao = async (request: Request): Promise<SessaoUsuario |
     const userRecord = await adminAuth.getUser(decoded.uid);
     if (userRecord.disabled) return null;
 
+    // Rejeitar tokens emitidos antes da última revogação (sem depender do cache do Firebase)
+    if (userRecord.tokensValidAfterTime) {
+      const validAfterMs = new Date(userRecord.tokensValidAfterTime).getTime();
+      if (decoded.iat * 1000 < validAfterMs) return null;
+    }
+
     const snap = await adminDb.collection('funcionarios').doc(decoded.uid).get();
     if (!snap.exists) return null;
 
