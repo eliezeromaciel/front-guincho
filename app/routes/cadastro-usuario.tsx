@@ -36,7 +36,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
   if (!nome || nome.length < 3 || nome.length > 50) {
     return { ok: false as const, error: 'Nome deve ter entre 3 e 50 caracteres.' };
   }
-  if (!email || !email.includes('@')) {
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !EMAIL_RE.test(email)) {
     return { ok: false as const, error: 'Endereço de e-mail inválido.' };
   }
   if (!senha || senha.length < 8) {
