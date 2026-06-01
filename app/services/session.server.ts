@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from './firebaseAdmin';
 interface FuncionarioDoc {
   role?: string;
   nome?: string;
+  ativo?: boolean;
 }
 
 const COOKIE_NAME = 'app_session';
@@ -43,6 +44,9 @@ export const validarECriarSessao = async (
     if (data.role !== 'admin' && data.role !== 'readonly') {
       return { ok: false, error: 'Usuário sem permissão de acesso.' };
     }
+    if (data.ativo === false) {
+      return { ok: false, error: 'Usuário sem permissão de acesso.' };
+    }
     const cookie = await criarCookieSessao(idToken);
     return { ok: true, cookieHeader: cookie };
   } catch {
@@ -69,6 +73,7 @@ export const verificarSessao = async (request: Request): Promise<SessaoUsuario |
     if (!snap.exists) return null;
 
     const data = snap.data() as FuncionarioDoc;
+    if (data.ativo === false) return null;
     const role = data.role;
     if (role !== 'admin' && role !== 'readonly') return null;
 
