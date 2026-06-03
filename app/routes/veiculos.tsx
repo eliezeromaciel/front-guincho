@@ -72,7 +72,7 @@ const Veiculos = () => {
       if (fetcher.data?.ok) {
         setPlaca('')
         setModelo('')
-        alert('Veículo cadastrado com sucesso')
+        alert('Caminhão cadastrado com sucesso!')
       } else if (fetcher.data && !fetcher.data.ok) {
         alert(`Erro ao cadastrar o veículo: ${fetcher.data.error}`)
       }
@@ -105,10 +105,10 @@ const Veiculos = () => {
           >
             <i className="bi bi-truck text-white" style={{ fontSize: '1rem' }} />
           </div>
-          <h1 className="h3 fw-bold mb-0" style={{ color: 'hsl(0 0% 95%)' }}>Cadastro de Veículos</h1>
+          <h1 className="h3 fw-bold mb-0" style={{ color: 'hsl(0 0% 95%)' }}>Caminhões da Frota</h1>
         </div>
         <p className="text-sm mb-4" style={{ color: 'hsl(220 10% 50%)' }}>
-          Registre placas e modelos dos veículos guinchados.
+          Cadastre os caminhões guincho que a empresa possui ou vai adquirir.
         </p>
 
         <fetcher.Form
@@ -121,7 +121,7 @@ const Veiculos = () => {
             }
           }}
         >
-          <h5 className="gf-section-title">Dados do Veículo</h5>
+          <h5 className="gf-section-title">Dados do Caminhão</h5>
 
           <div className="mb-3">
             <label className="form-label fw-semibold text-sm" style={{ color: 'hsl(0 0% 70%)' }}>
@@ -151,7 +151,7 @@ const Veiculos = () => {
               className="form-control form-control-lg bg-dark gf-input"
               type="text"
               name="modelo"
-              placeholder="Ex: Kadett cinza, Hornet preta"
+              placeholder="Ex: Mercedes Atego, Volkswagen Constellation"
               maxLength={30}
               value={modelo}
               onChange={(e) => setModelo(e.target.value)}
@@ -191,7 +191,7 @@ const Veiculos = () => {
               ) : (
                 <>
                   <i className="bi bi-truck" />
-                  Cadastrar Veículo
+                  Cadastrar Caminhão
                 </>
               )}
             </button>

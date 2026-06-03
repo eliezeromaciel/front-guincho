@@ -209,18 +209,6 @@ export default function Home() {
                 </div>
 
                 <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
-                  <Link to="/veiculos" className="card-link">
-                    <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
-                      <div className="text-info mb-3">
-                        <i className="bi bi-truck-flatbed display-4"></i>
-                      </div>
-                      <h3 className="h5 fw-bold text-white mb-2">Veículos Guinchados</h3>
-                      <p className="text-secondary small mb-0">Veja e gerencie as placas e modelos de veículos.</p>
-                    </div>
-                  </Link>
-                </div>
-
-                <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
                   <Link to="/despesas" className="card-link">
                     <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
                       <div className="text-danger mb-3">
@@ -233,13 +221,13 @@ export default function Home() {
                 </div>
 
                 <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
-                  <Link to="/novousuario" className="card-link">
+                  <Link to="/cadastros" className="card-link">
                     <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
                       <div className="text-warning mb-3">
                         <i className="bi bi-person-badge display-4"></i>
                       </div>
-                      <h3 className="h5 fw-bold text-white mb-2">Cadastrar Motorista</h3>
-                      <p className="text-secondary small mb-0">Crie novos logins administrativos e de motoristas.</p>
+                      <h3 className="h5 fw-bold text-white mb-2">Cadastros</h3>
+                      <p className="text-secondary small mb-0">Motoristas e caminhões da frota.</p>
                     </div>
                   </Link>
                 </div>
