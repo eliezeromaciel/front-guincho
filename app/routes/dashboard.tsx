@@ -365,7 +365,7 @@ export default function Dashboard() {
                             </td>
                             <td>
                               <span className="fw-bold text-light">{s.placaVeiculo || '---'}</span>
-                              <span className="d-block text-secondary text-xs">{s.detalhesVeiculo}</span>
+                              <span className="d-block text-secondary text-xs">{s.detalhesVeiculo || '---'}</span>
                             </td>
                             <td className="text-secondary">{s.motoristaNome}</td>
                             <td className="text-end text-success fw-bold font-mono">

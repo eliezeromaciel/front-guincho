@@ -281,7 +281,7 @@ export default function Home() {
                         </div>
                         <div>
                           <span className="text-secondary small fw-semibold uppercase d-block">Retirada (Busca)</span>
-                          <span className="text-light fw-bold">{servicoAtivo.pickUpAdress}</span>
+                          <span className="text-light fw-bold">{servicoAtivo.pickUpAdress || <span className="text-secondary fst-italic">Não informado</span>}</span>
                         </div>
                       </div>
                     </div>
@@ -293,7 +293,7 @@ export default function Home() {
                         </div>
                         <div>
                           <span className="text-secondary small fw-semibold uppercase d-block">Entrega (Destino)</span>
-                          <span className="text-light fw-bold">{servicoAtivo.deliveryAdress}</span>
+                          <span className="text-light fw-bold">{servicoAtivo.deliveryAdress || <span className="text-secondary fst-italic">Não informado</span>}</span>
                         </div>
                       </div>
                     </div>
@@ -304,11 +304,11 @@ export default function Home() {
                     <div className="row align-items-center">
                       <div className="col-6">
                         <span className="text-secondary small uppercase d-block">Veículo Guinchado</span>
-                        <strong className="text-light">{(servicoAtivo as any).detalhesVeiculo}</strong>
+                        <strong className="text-light">{(servicoAtivo as any).detalhesVeiculo || <span className="text-secondary fst-italic fw-normal">Não informado</span>}</strong>
                       </div>
                       <div className="col-6 border-start border-secondary ps-3">
                         <span className="text-secondary small uppercase d-block">Placa</span>
-                        <strong className="text-light font-mono h5 m-0">{(servicoAtivo as any).placaVeiculo}</strong>
+                        <strong className="text-light font-mono h5 m-0">{(servicoAtivo as any).placaVeiculo || <span className="text-secondary fst-italic fw-normal" style={{ fontSize: '0.85rem' }}>Não informada</span>}</strong>
                       </div>
                     </div>
                   </div>

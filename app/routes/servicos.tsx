@@ -53,8 +53,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const veiculoIdRaw = ((formData.get('veiculoId') as string | null) ?? '').trim();
   const veiculoPlaca = ((formData.get('veiculo') as string | null) ?? '').trim();
   const detalhesVeiculo = ((formData.get('detalhesVeiculo') as string | null) ?? '').trim();
-  if (!detalhesVeiculo || detalhesVeiculo.length < 2 || detalhesVeiculo.length > 100) {
-    return { ok: false as const, error: 'Detalhes do veículo inválidos (2 a 100 caracteres).' };
+  if (detalhesVeiculo && detalhesVeiculo.length > 100) {
+    return { ok: false as const, error: 'Detalhes do veículo devem ter no máximo 100 caracteres.' };
   }
   const valorCobradoRaw = ((formData.get('valorCobrado') as string | null) ?? '').trim();
   
@@ -70,11 +70,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
   if (clienteTelefone && clienteTelefone.length > 20) {
     return { ok: false as const, error: 'Telefone inválido.' };
   }
-  if (!enderecoRetirada || enderecoRetirada.length > 300) {
-    return { ok: false as const, error: 'Endereço de retirada inválido.' };
+  if (enderecoRetirada && enderecoRetirada.length > 300) {
+    return { ok: false as const, error: 'Endereço de retirada muito longo (máx. 300 caracteres).' };
   }
-  if (!enderecoEntrega || enderecoEntrega.length > 300) {
-    return { ok: false as const, error: 'Endereço de entrega inválido.' };
+  if (enderecoEntrega && enderecoEntrega.length > 300) {
+    return { ok: false as const, error: 'Endereço de entrega muito longo (máx. 300 caracteres).' };
   }
   if (!quemRecebeUid) {
     return { ok: false as const, error: 'Selecione quem receberá o valor.' };
@@ -117,9 +117,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // 2. Cadastra veículo se não existir
-  if (!veiculoId) {
+  if (!veiculoId && veiculoPlaca) {
     const PLACA_MERCOSUL = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
-    if (!veiculoPlaca || !PLACA_MERCOSUL.test(veiculoPlaca)) {
+    if (!PLACA_MERCOSUL.test(veiculoPlaca)) {
       return { ok: false as const, error: 'Placa do veículo inválida. Use o formato ABC8K25.' };
     }
     const { postNovoVeiculo } = await import('~/services/veiculos.server');
@@ -131,7 +131,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // 3. Atualizar endereços de referência no cliente
-  if (clienteId) {
+  if (clienteId && (enderecoRetirada || enderecoEntrega)) {
     const { patchCliente } = await import('~/services/clientes.server');
     await patchCliente(clienteId, enderecoRetirada, enderecoEntrega);
   }
@@ -162,7 +162,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     await enviarNotificacaoServidor(
       motoristaUid,
       'Novo serviço de guincho!',
-      `Veículo: ${detalhesVeiculo} (${veiculoPlaca}) — De: ${enderecoRetirada}`
+      [
+        detalhesVeiculo && veiculoPlaca ? `Veículo: ${detalhesVeiculo} (${veiculoPlaca})` :
+        detalhesVeiculo ? `Veículo: ${detalhesVeiculo}` :
+        veiculoPlaca ? `Placa: ${veiculoPlaca}` : null,
+        enderecoRetirada ? `De: ${enderecoRetirada}` : null,
+        enderecoEntrega ? `Para: ${enderecoEntrega}` : null,
+      ].filter(Boolean).join(' — ') || 'Novo serviço atribuído a você.'
     );
   } catch (err) {
     console.log('[servicos action] falha ao enviar notificação push:', err);
@@ -344,9 +350,9 @@ export default function Servicos() {
             } else if (!quemRecebeUid) {
               e.preventDefault();
               alert('Por favor, selecione quem receberá o valor do guincho.');
-            } else if (!veiculoSelecionado?.id && (!veiculoSelecionado?.placa || veiculoSelecionado.placa.length !== 7)) {
+            } else if (veiculoSelecionado?.placa && !veiculoSelecionado?.id && veiculoSelecionado.placa.length !== 7) {
               e.preventDefault();
-              alert('Placa do veículo incompleta.');
+              alert('Placa do veículo incompleta. Complete os 7 caracteres ou deixe em branco.');
             }
           }}
         >
@@ -440,7 +446,7 @@ export default function Servicos() {
                 name="veiculo"
                 placeholder="Ex: ABC8K25"
                 maxLength={7}
-                required
+
                 value={veiculoSelecionado?.placa ?? ''}
                 onChange={handleChangeInputPlaca}
                 onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 250)}
@@ -472,7 +478,7 @@ export default function Servicos() {
                 name="detalhesVeiculo"
                 placeholder="Ex: corsa azul, moto hornet preta"
                 maxLength={50}
-                required
+
                 value={detalhesVeiculo}
                 onChange={(e) => setDetalhesVeiculo(e.target.value)}
               />
@@ -556,7 +562,7 @@ export default function Servicos() {
               name="enderecoRetirada"
               placeholder="Ex: Rua Camaleão, 345, Porto Alegre"
               maxLength={300}
-              required
+
               value={enderecoRetirada}
               onChange={(e) => setEnderecoRetirada(e.target.value)}
             />
@@ -570,7 +576,7 @@ export default function Servicos() {
               name="enderecoEntrega"
               placeholder="Ex: Av. Indústrias, 79, São Leopoldo"
               maxLength={300}
-              required
+
               value={enderecoEntrega}
               onChange={(e) => setEnderecoEntrega(e.target.value)}
             />
