@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFetcher, useLoaderData, Link } from 'react-router';
-import { getClientes, postNovoCliente, patchCliente } from '~/services/clientes';
-import { getVeiculos, postNovoVeiculo } from '~/services/veiculos';
-import { postNovoServico, getServicos } from '~/services/servicos';
 import { requireAdmin } from '~/services/session.server';
-import { getFuncionarios, verificarFuncionarioExiste } from '~/services/funcionarios';
-import { enviarNotificacaoServidor } from '~/services/webpush.server';
 import type { Route } from './+types/servicos';
 
 type Cliente = {
@@ -33,6 +28,11 @@ export const meta = () => [{ title: 'Novo Serviço — GuinchoFácil' }];
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   await requireAdmin(request);
+  const { getClientes } = await import('~/services/clientes.server');
+  const { getVeiculos } = await import('~/services/veiculos.server');
+  const { getFuncionarios } = await import('~/services/funcionarios.server');
+  const { getServicos } = await import('~/services/servicos.server');
+
   const [clientes, veiculos, usuarios, servicos] = await Promise.all([
     getClientes(),
     getVeiculos(),
@@ -84,7 +84,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // Busca nomes do Firestore — não confia nos hidden fields do formulário
-  const { adminDb } = await import('~/services/firebaseAdmin');
+  const { adminDb } = await import('~/services/firebaseAdmin.server');
   const [motoristaDoc, receptorDoc] = await Promise.all([
     adminDb.collection('funcionarios').doc(motoristaUid).get(),
     adminDb.collection('funcionarios').doc(quemRecebeUid).get(),
@@ -108,6 +108,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   // 1. Cadastra cliente se não existir
   if (!clienteId) {
+    const { postNovoCliente } = await import('~/services/clientes.server');
     const novoCliente = await postNovoCliente(clienteNome, clienteTelefone || undefined, undefined, enderecoEntrega, enderecoRetirada);
     if (!novoCliente.ok) {
       return { ok: false as const, error: 'Erro ao cadastrar novo cliente.' };
@@ -121,6 +122,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     if (!veiculoPlaca || !PLACA_MERCOSUL.test(veiculoPlaca)) {
       return { ok: false as const, error: 'Placa do veículo inválida. Use o formato ABC8K25.' };
     }
+    const { postNovoVeiculo } = await import('~/services/veiculos.server');
     const novoVeiculo = await postNovoVeiculo(veiculoPlaca, detalhesVeiculo);
     if (!novoVeiculo.ok) {
       return { ok: false as const, error: 'Erro ao cadastrar novo veículo.' };
@@ -130,10 +132,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   // 3. Atualizar endereços de referência no cliente
   if (clienteId) {
+    const { patchCliente } = await import('~/services/clientes.server');
     await patchCliente(clienteId, enderecoRetirada, enderecoEntrega);
   }
 
   // 4. Cadastra o Serviço
+  const { postNovoServico } = await import('~/services/servicos.server');
   const novoServico = await postNovoServico(
     clienteId,
     veiculoId,
@@ -154,6 +158,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   // 5. Enviar Notificação Web Push para o Motorista Escolhido
   try {
+    const { enviarNotificacaoServidor } = await import('~/services/webpush.server');
     await enviarNotificacaoServidor(
       motoristaUid,
       'Novo serviço de guincho!',

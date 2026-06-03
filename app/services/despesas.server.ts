@@ -1,4 +1,4 @@
-import { adminDb } from '~/services/firebaseAdmin';
+import { adminDb } from '~/services/firebaseAdmin.server';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export interface Despesa {

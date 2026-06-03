@@ -1,4 +1,4 @@
-import { adminDb } from '~/services/firebaseAdmin';
+import { adminDb } from '~/services/firebaseAdmin.server';
 import type { DocumentReference } from 'firebase-admin/firestore';
 
 export const getClientes = async () => {

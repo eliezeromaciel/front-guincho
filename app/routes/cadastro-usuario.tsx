@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFetcher, Link } from 'react-router';
 import { requireAdmin } from '~/services/session.server';
-import { postNovoFuncionario } from '~/services/funcionarios';
+import { postNovoFuncionario } from '~/services/funcionarios.server';
 import type { Route } from './+types/cadastro-usuario';
 
 export const meta = () => [{ title: 'Cadastrar Usuário — GuinchoFácil' }];

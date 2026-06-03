@@ -1,4 +1,4 @@
-import { adminDb, adminAuth } from '~/services/firebaseAdmin';
+import { adminDb, adminAuth } from '~/services/firebaseAdmin.server';
 
 export interface Funcionario {
   uid: string;

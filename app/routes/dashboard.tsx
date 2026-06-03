@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLoaderData, Link } from 'react-router';
 import { requireAdmin } from '~/services/session.server';
-import { getServicos } from '~/services/servicos';
-import { getDespesas } from '~/services/despesas';
+import { getServicos } from '~/services/servicos.server';
+import { getDespesas } from '~/services/despesas.server';
 import type { Route } from './+types/dashboard';
 
 export const meta = () => [{ title: 'Painel Financeiro — GuinchoFácil' }];

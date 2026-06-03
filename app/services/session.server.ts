@@ -1,5 +1,5 @@
 import { redirect } from 'react-router';
-import { adminAuth, adminDb } from './firebaseAdmin';
+import { adminAuth, adminDb } from './firebaseAdmin.server';
 
 interface FuncionarioDoc {
   role?: string;

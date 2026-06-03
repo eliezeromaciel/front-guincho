@@ -17,7 +17,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   // Se for motorista (readonly), buscar o serviço ativo dele
   if (sessao.role === 'readonly') {
-    const { getServicoAtivoMotorista, getFotosServico } = await import('~/services/servicos');
+    const { getServicoAtivoMotorista, getFotosServico } = await import('~/services/servicos.server');
     servicoAtivo = await getServicoAtivoMotorista(sessao.uid);
     if (servicoAtivo && servicoAtivo.id) {
       fotosUrls = await getFotosServico(servicoAtivo.id);
@@ -41,7 +41,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // Verifica propriedade do serviço antes de qualquer ação (evita IDOR)
-  const { adminDb } = await import('~/services/firebaseAdmin');
+  const { adminDb } = await import('~/services/firebaseAdmin.server');
   const doc = await adminDb.collection('servicos').doc(servicoId).get();
   if (!doc.exists || doc.data()?.motoristaUid !== sessao.uid) {
     return { ok: false, error: 'Acesso negado.' };
@@ -56,7 +56,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     if (base64.length > 1_400_000) {
       return { ok: false, error: 'Imagem muito grande. Máximo 1 MB.' };
     }
-    const { uploadFotoServico } = await import('~/services/servicos');
+    const { uploadFotoServico } = await import('~/services/servicos.server');
     return await uploadFotoServico(servicoId, base64);
   }
 
@@ -64,7 +64,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     if (!doc.data()?.fotosEnviadas) {
       return { ok: false, error: 'Envie as 4 fotos obrigatórias antes de finalizar.' };
     }
-    const { finalizarServico } = await import('~/services/servicos');
+    const { finalizarServico } = await import('~/services/servicos.server');
     return await finalizarServico(servicoId);
   }
 

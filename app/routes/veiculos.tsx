@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher, Link } from 'react-router'
-import { postNovoVeiculo } from '~/services/veiculos'
+import { postNovoVeiculo } from '~/services/veiculos.server'
 import { requireAdmin } from '~/services/session.server'
 import type { Route } from './+types/veiculos'
 

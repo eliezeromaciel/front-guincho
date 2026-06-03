@@ -1,5 +1,5 @@
 import webpush from 'web-push';
-import { adminDb } from '~/services/firebaseAdmin';
+import { adminDb } from '~/services/firebaseAdmin.server';
 
 const vapidContact = process.env.VAPID_CONTACT;
 const vapidPublicKey = process.env.VITE_VAPID_PUBLIC_KEY;

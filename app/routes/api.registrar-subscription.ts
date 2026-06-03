@@ -1,4 +1,4 @@
-import { adminDb } from '~/services/firebaseAdmin';
+import { adminDb } from '~/services/firebaseAdmin.server';
 import { requireAuth } from '~/services/session.server';
 import { FieldValue } from 'firebase-admin/firestore';
 

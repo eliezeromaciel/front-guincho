@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher, Link } from 'react-router'
-import { postNovoCliente } from '~/services/clientes'
+import { postNovoCliente } from '~/services/clientes.server'
 import { requireAdmin } from '~/services/session.server'
 import type { Route } from './+types/clientes'
 
