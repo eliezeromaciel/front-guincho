@@ -7,7 +7,7 @@ export interface Servico {
   veiculoId: string;
   placaVeiculo: string;
   valorCobrado: number;
-  receiver: string; // quem recebe o valor (nome)
+  receiver: string; // quem recebe o valor (nome) — pode ser vazio
   quemRecebeUid?: string;
   pickUpAdress: string;
   deliveryAdress: string;
@@ -18,6 +18,12 @@ export interface Servico {
   fotosEnviadas: boolean;
   createdAt: any;
   finalizedAt?: any;
+  // Campos de faturamento (seguradora)
+  tipoRecebedor: 'motorista' | 'seguradora' | 'nenhum';
+  seguradoraId?: string;
+  seguradoraNome?: string;
+  faturadoStatus?: 'pendente' | 'recebido'; // apenas quando tipoRecebedor === 'seguradora'
+  faturadoRecebidoEm?: any;
 }
 
 export const getServicos = async (): Promise<Servico[]> => {
@@ -47,15 +53,18 @@ export const postNovoServico = async (
   motoristaUid: string,
   motoristaNome: string,
   detalhesVeiculo: string,
+  tipoRecebedor: 'motorista' | 'seguradora' | 'nenhum' = 'nenhum',
+  seguradoraId?: string,
+  seguradoraNome?: string,
 ) => {
   try {
-    const docRef = await adminDb.collection('servicos').add({
+    const docData: Record<string, any> = {
       clienteId: idClient,
       veiculoId: idVeiculo,
       placaVeiculo,
       valorCobrado: amountCharged,
       receiver,
-      quemRecebeUid,
+      quemRecebeUid: quemRecebeUid || '',
       pickUpAdress,
       deliveryAdress,
       motoristaUid,
@@ -63,9 +72,19 @@ export const postNovoServico = async (
       detalhesVeiculo,
       status: 'pendente',
       fotosEnviadas: false,
+      tipoRecebedor,
       createdAt: FieldValue.serverTimestamp(),
-    });
-    if (process.env.NODE_ENV === 'development') console.log('[postNovoServico] result: ok');
+    };
+
+    // Campos específicos de faturamento para seguradora
+    if (tipoRecebedor === 'seguradora' && seguradoraId) {
+      docData.seguradoraId = seguradoraId;
+      docData.seguradoraNome = seguradoraNome || '';
+      docData.faturadoStatus = 'pendente';
+    }
+
+    const docRef = await adminDb.collection('servicos').add(docData);
+    if (process.env.NODE_ENV === 'development') console.log('[postNovoServico] result: ok, tipo:', tipoRecebedor);
     return { ok: true, docRef };
   } catch (error: any) {
     console.error('[postNovoServico] erro:', error?.code ?? 'unknown');
@@ -150,6 +169,20 @@ export const finalizarServico = async (servicoId: string) => {
   } catch (error: any) {
     console.error('[finalizarServico] erro:', error?.code ?? 'unknown');
     return { ok: false, error };
+  }
+};
+
+export const marcarFaturadoRecebido = async (servicoId: string) => {
+  try {
+    await adminDb.collection('servicos').doc(servicoId).update({
+      faturadoStatus: 'recebido',
+      faturadoRecebidoEm: FieldValue.serverTimestamp(),
+    });
+    if (process.env.NODE_ENV === 'development') console.log('[marcarFaturadoRecebido] ok');
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[marcarFaturadoRecebido] erro:', error?.code ?? 'unknown');
+    return { ok: false as const, error };
   }
 };
 

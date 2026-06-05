@@ -24,6 +24,12 @@ type Funcionario = {
   motorista: 'A' | 'B' | 'C' | 'none';
 };
 
+type Seguradora = {
+  id?: string;
+  nome: string;
+  ativa: boolean;
+};
+
 export const meta = () => [{ title: 'Novo Serviço — GuinchoFácil' }];
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -32,14 +38,16 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { getVeiculos } = await import('~/services/veiculos.server');
   const { getFuncionarios } = await import('~/services/funcionarios.server');
   const { getServicos } = await import('~/services/servicos.server');
+  const { getSeguradorasAtivas } = await import('~/services/seguradoras.server');
 
-  const [clientes, veiculos, usuarios, servicos] = await Promise.all([
+  const [clientes, veiculos, usuarios, servicos, seguradoras] = await Promise.all([
     getClientes(),
     getVeiculos(),
     getFuncionarios(),
     getServicos(),
+    getSeguradorasAtivas(),
   ]);
-  return { clientes, veiculos, usuarios, servicos };
+  return { clientes, veiculos, usuarios, servicos, seguradoras };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -58,7 +66,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
   const valorCobradoRaw = ((formData.get('valorCobrado') as string | null) ?? '').trim();
   
+  // Quem recebe — agora é OPCIONAL
   const quemRecebeUid = ((formData.get('quemRecebeUid') as string | null) ?? '').trim();
+  const tipoRecebedor = ((formData.get('tipoRecebedor') as string | null) ?? 'nenhum').trim() as 'motorista' | 'seguradora' | 'nenhum';
+  const seguradoraId = ((formData.get('seguradoraId') as string | null) ?? '').trim();
+  const seguradoraNome = ((formData.get('seguradoraNome') as string | null) ?? '').trim();
+  
   const motoristaUid = ((formData.get('motoristaUid') as string | null) ?? '').trim();
   
   const enderecoRetirada = ((formData.get('enderecoRetirada') as string | null) ?? '').trim();
@@ -76,27 +89,29 @@ export const action = async ({ request }: Route.ActionArgs) => {
   if (enderecoEntrega && enderecoEntrega.length > 300) {
     return { ok: false as const, error: 'Endereço de entrega muito longo (máx. 300 caracteres).' };
   }
-  if (!quemRecebeUid) {
-    return { ok: false as const, error: 'Selecione quem receberá o valor.' };
-  }
   if (!motoristaUid) {
     return { ok: false as const, error: 'Selecione o motorista para a guinchada.' };
   }
 
-  // Busca nomes do Firestore — não confia nos hidden fields do formulário
+  // Busca nome do motorista do Firestore
   const { adminDb } = await import('~/services/firebaseAdmin.server');
-  const [motoristaDoc, receptorDoc] = await Promise.all([
-    adminDb.collection('funcionarios').doc(motoristaUid).get(),
-    adminDb.collection('funcionarios').doc(quemRecebeUid).get(),
-  ]);
+  const motoristaDoc = await adminDb.collection('funcionarios').doc(motoristaUid).get();
   if (!motoristaDoc.exists) {
     return { ok: false as const, error: 'Motorista selecionado não encontrado.' };
   }
-  if (!receptorDoc.exists) {
-    return { ok: false as const, error: 'Receptor do valor não encontrado.' };
-  }
   const motoristaNome = (motoristaDoc.data() as { nome?: string })?.nome ?? '';
-  const quemRecebeNome = (receptorDoc.data() as { nome?: string })?.nome ?? '';
+
+  // Resolve quem recebe (nome)
+  let quemRecebeNome = '';
+  if (tipoRecebedor === 'motorista' && quemRecebeUid) {
+    const receptorDoc = await adminDb.collection('funcionarios').doc(quemRecebeUid).get();
+    if (!receptorDoc.exists) {
+      return { ok: false as const, error: 'Receptor do valor não encontrado.' };
+    }
+    quemRecebeNome = (receptorDoc.data() as { nome?: string })?.nome ?? '';
+  } else if (tipoRecebedor === 'seguradora') {
+    quemRecebeNome = seguradoraNome;
+  }
 
   const valorCobradoNum = parseInt(valorCobradoRaw, 10);
   if (isNaN(valorCobradoNum) || valorCobradoNum <= 0 || valorCobradoNum > 99999) {
@@ -149,7 +164,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     enderecoEntrega,
     motoristaUid,
     motoristaNome,
-    detalhesVeiculo
+    detalhesVeiculo,
+    tipoRecebedor,
+    seguradoraId || undefined,
+    seguradoraNome || undefined,
   );
 
   if (!novoServico.ok) {
@@ -168,6 +186,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
         veiculoPlaca ? `Placa: ${veiculoPlaca}` : null,
         enderecoRetirada ? `De: ${enderecoRetirada}` : null,
         enderecoEntrega ? `Para: ${enderecoEntrega}` : null,
+        tipoRecebedor === 'seguradora' ? `Faturado: ${seguradoraNome}` : null,
       ].filter(Boolean).join(' — ') || 'Novo serviço atribuído a você.'
     );
   } catch (err) {
@@ -178,7 +197,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 };
 
 export default function Servicos() {
-  const { clientes, veiculos, usuarios, servicos } = useLoaderData<typeof loader>();
+  const { clientes, veiculos, usuarios, servicos, seguradoras } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const wasSubmitting = useRef(false);
 
@@ -194,8 +213,12 @@ export default function Servicos() {
   const [enderecoRetirada, setEnderecoRetirada] = useState<string>('');
   const [enderecoEntrega, setEnderecoEntrega] = useState<string>('');
 
+  // Quem recebe — motorista ou seguradora
+  const [tipoRecebedor, setTipoRecebedor] = useState<'motorista' | 'seguradora' | 'nenhum'>('nenhum');
   const [quemRecebeUid, setQuemRecebeUid] = useState<string>('');
   const [quemRecebeNome, setQuemRecebeNome] = useState<string>('');
+  const [seguradoraId, setSeguradoraId] = useState<string>('');
+  const [seguradoraNome, setSeguradoraNome] = useState<string>('');
   
   const [motoristaUid, setMotoristaUid] = useState<string>('');
   const [motoristaNome, setMotoristaNome] = useState<string>('');
@@ -287,6 +310,39 @@ export default function Servicos() {
     setDetalhesVeiculo(elem.modelo ?? '');
   };
 
+  // Handler para seleção de quem recebe
+  const handleQuemRecebeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    
+    if (!value) {
+      setTipoRecebedor('nenhum');
+      setQuemRecebeUid('');
+      setQuemRecebeNome('');
+      setSeguradoraId('');
+      setSeguradoraNome('');
+      return;
+    }
+
+    // Verifica se é seguradora (prefixo "seg_")
+    if (value.startsWith('seg_')) {
+      const segId = value.replace('seg_', '');
+      const seg = (seguradoras as Seguradora[]).find((s) => s.id === segId);
+      setTipoRecebedor('seguradora');
+      setQuemRecebeUid('');
+      setQuemRecebeNome(seg?.nome ?? '');
+      setSeguradoraId(segId);
+      setSeguradoraNome(seg?.nome ?? '');
+    } else {
+      // É motorista
+      const func = (usuarios as Funcionario[]).find((u) => u.uid === value);
+      setTipoRecebedor('motorista');
+      setQuemRecebeUid(value);
+      setQuemRecebeNome(func?.displayName ?? '');
+      setSeguradoraId('');
+      setSeguradoraNome('');
+    }
+  };
+
   const resetarFormulario = () => {
     setClienteSelecionado({ nome: '' });
     setClientesFiltrados([]);
@@ -296,8 +352,11 @@ export default function Servicos() {
     setDetalhesVeiculo('');
     setEnderecoRetirada('');
     setEnderecoEntrega('');
+    setTipoRecebedor('nenhum');
     setQuemRecebeUid('');
     setQuemRecebeNome('');
+    setSeguradoraId('');
+    setSeguradoraNome('');
     setMotoristaUid('');
     setMotoristaNome('');
   };
@@ -319,6 +378,9 @@ export default function Servicos() {
 
   // Lista de motoristas da frota ( Gabriel, Daniel, ou motoristas cadastrados )
   const motoristasDisponiveis = (usuarios as Funcionario[]).filter((u) => u.motorista !== 'none' || u.role === 'readonly');
+
+  // Valor do select de "quem recebe"
+  const quemRecebeSelectValue = tipoRecebedor === 'seguradora' ? `seg_${seguradoraId}` : tipoRecebedor === 'motorista' ? quemRecebeUid : '';
 
   return (
     <div className="min-vh-100 bg-dark text-white py-5 px-3 d-flex align-items-center justify-content-center">
@@ -347,9 +409,6 @@ export default function Servicos() {
             if (!motoristaUid) {
               e.preventDefault();
               alert('Por favor, selecione quem fará a guinchada.');
-            } else if (!quemRecebeUid) {
-              e.preventDefault();
-              alert('Por favor, selecione quem receberá o valor do guincho.');
             } else if (veiculoSelecionado?.placa && !veiculoSelecionado?.id && veiculoSelecionado.placa.length !== 7) {
               e.preventDefault();
               alert('Placa do veículo incompleta. Complete os 7 caracteres ou deixe em branco.');
@@ -358,8 +417,11 @@ export default function Servicos() {
         >
           <input type="hidden" name="clienteId" value={clienteSelecionado?.id ?? ''} />
           <input type="hidden" name="veiculoId" value={veiculoSelecionado?.id ?? ''} />
+          <input type="hidden" name="tipoRecebedor" value={tipoRecebedor} />
           <input type="hidden" name="quemRecebeUid" value={quemRecebeUid} />
           <input type="hidden" name="quemRecebeNome" value={quemRecebeNome} />
+          <input type="hidden" name="seguradoraId" value={seguradoraId} />
+          <input type="hidden" name="seguradoraNome" value={seguradoraNome} />
           <input type="hidden" name="motoristaUid" value={motoristaUid} />
           <input type="hidden" name="motoristaNome" value={motoristaNome} />
 
@@ -514,25 +576,39 @@ export default function Servicos() {
             </div>
 
             <div className="col-12 col-md-6 mb-3">
-              <label className="form-label fw-semibold text-light">Quem receberá o valor</label>
+              <label className="form-label fw-semibold text-light">
+                Quem receberá o valor
+                <span className="text-secondary fw-normal ms-1" style={{ fontSize: '0.75rem' }}>(opcional)</span>
+              </label>
               <select
                 className="form-select form-select-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
-                required
-                value={quemRecebeUid}
-                onChange={(e) => {
-                  const uid = e.target.value;
-                  setQuemRecebeUid(uid);
-                  const name = (usuarios as Funcionario[]).find((u) => u.uid === uid)?.displayName ?? '';
-                  setQuemRecebeNome(name);
-                }}
+                value={quemRecebeSelectValue}
+                onChange={handleQuemRecebeChange}
               >
-                <option value="">Selecione quem recebe...</option>
-                {(usuarios as Funcionario[]).map((u) => (
-                  <option key={u.uid} value={u.uid}>
-                    {u.displayName}
-                  </option>
-                ))}
+                <option value="">Nenhum / Não definido</option>
+                <optgroup label="── Motoristas ──">
+                  {(usuarios as Funcionario[]).map((u) => (
+                    <option key={u.uid} value={u.uid}>
+                      {u.displayName}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="── Seguradoras (Faturado) ──">
+                  {(seguradoras as Seguradora[]).map((s) => (
+                    <option key={s.id} value={`seg_${s.id}`}>
+                      {s.nome}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
+              {tipoRecebedor === 'seguradora' && (
+                <div className="mt-2 p-2 rounded-2 border border-warning border-opacity-30" style={{ background: 'hsl(38 92% 50% / 0.08)' }}>
+                  <small className="text-warning d-flex align-items-center gap-1">
+                    <i className="bi bi-clock-history"></i>
+                    Faturado — valor será recebido em ~30 dias
+                  </small>
+                </div>
+              )}
             </div>
           </div>
 
@@ -610,4 +686,3 @@ export default function Servicos() {
     </div>
   );
 }
-

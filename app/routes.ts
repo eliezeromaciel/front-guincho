@@ -11,7 +11,9 @@ export default [
     route('/cadastros', 'routes/cadastros.tsx'),
     route('/despesas', 'routes/despesas.tsx'),
     route('/relatoriosfinanceiros', 'routes/dashboard.tsx'),
+    route('/seguradoras', 'routes/seguradoras.tsx'),
     route('/api/notificar', 'routes/api.notificar.ts'),
     route('/api/registrar-subscription', 'routes/api.registrar-subscription.ts'),
+    route('/api/download-relatorio', 'routes/api.download-relatorio.ts'),
 ] satisfies RouteConfig;
 
