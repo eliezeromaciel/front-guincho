@@ -46,6 +46,26 @@ export default function Cadastros() {
             </div>
           </Link>
 
+          <Link to="/novocliente" className="card-link">
+            <div className="gf-card hover-glow hover-scale d-flex align-items-center gap-4 p-4" style={{ background: 'hsl(220 16% 13%)' }}>
+              <div
+                className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                style={{
+                  width: 52, height: 52,
+                  background: 'linear-gradient(135deg, hsl(142 70% 45%), hsl(152 60% 40%))',
+                  boxShadow: '0 4px 12px hsl(142 70% 45% / 0.3)',
+                }}
+              >
+                <i className="bi bi-people text-white" style={{ fontSize: '1.4rem' }} />
+              </div>
+              <div>
+                <h3 className="h5 fw-bold text-white mb-1">Clientes</h3>
+                <p className="text-secondary small mb-0">Gerencie contatos e endereços padrão de clientes.</p>
+              </div>
+              <i className="bi bi-chevron-right text-secondary ms-auto" />
+            </div>
+          </Link>
+
           <Link to="/veiculos" className="card-link">
             <div className="gf-card hover-glow hover-scale d-flex align-items-center gap-4 p-4" style={{ background: 'hsl(220 16% 13%)' }}>
               <div

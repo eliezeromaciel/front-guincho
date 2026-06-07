@@ -175,7 +175,7 @@ export default function Home() {
                   src="/app/assets/img/logotipo-guincho-farias.jpg"
                   alt="GuinchoFácil"
                   className="img-fluid rounded-3 border mb-2 border-secondary shadow"
-                  style={{ height: '100px' }}
+                  style={{ height: '70px' }}
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
@@ -183,7 +183,7 @@ export default function Home() {
               </div>
 
               {/* Grid de Opções Operacionais */}
-              <div className="row g-4 justify-content-center gf-stagger">
+              <div className="row g-4 justify-content-center gf-stagger mb-5">
                 <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
                   <Link to="/novoservico" className="card-link">
                     <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
@@ -197,13 +197,13 @@ export default function Home() {
                 </div>
 
                 <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
-                  <Link to="/novocliente" className="card-link">
+                  <Link to="/relatoriosfinanceiros" className="card-link">
                     <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
-                      <div className="text-success mb-3">
-                        <i className="bi bi-people display-4"></i>
+                      <div className="text-primary mb-3">
+                        <i className="bi bi-graph-up-arrow display-4"></i>
                       </div>
-                      <h3 className="h5 fw-bold text-white mb-2">Novo Cliente</h3>
-                      <p className="text-secondary small mb-0">Gerencie contatos e endereços padrão de clientes.</p>
+                      <h3 className="h5 fw-bold text-white mb-2">Painel Financeiro</h3>
+                      <p className="text-secondary small mb-0">Veja receitas, guinchos e diluições de despesas.</p>
                     </div>
                   </Link>
                 </div>
@@ -228,18 +228,6 @@ export default function Home() {
                       </div>
                       <h3 className="h5 fw-bold text-white mb-2">Cadastros</h3>
                       <p className="text-secondary small mb-0">Motoristas e caminhões da frota.</p>
-                    </div>
-                  </Link>
-                </div>
-
-                <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
-                  <Link to="/relatoriosfinanceiros" className="card-link">
-                    <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
-                      <div className="text-primary mb-3">
-                        <i className="bi bi-graph-up-arrow display-4"></i>
-                      </div>
-                      <h3 className="h5 fw-bold text-white mb-2">Painel Financeiro</h3>
-                      <p className="text-secondary small mb-0">Veja receitas, guinchos e diluições de despesas.</p>
                     </div>
                   </Link>
                 </div>
