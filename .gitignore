@@ -12,6 +12,9 @@
 # Claude Code — configurações pessoais
 .claude/settings.local.json
 
+# Vercel
+.vercel/
+
 # Editores e IDEs
 .vscode/settings.json
 .idea/
