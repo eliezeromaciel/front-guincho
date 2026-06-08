@@ -186,3 +186,25 @@ export const marcarFaturadoRecebido = async (servicoId: string) => {
   }
 };
 
+export const updateServico = async (servicoId: string, campos: Partial<Record<string, any>>) => {
+  try {
+    await adminDb.collection('servicos').doc(servicoId).update(campos);
+    if (process.env.NODE_ENV === 'development') console.log('[updateServico] ok', Object.keys(campos));
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[updateServico] erro:', error?.code ?? 'unknown');
+    return { ok: false as const, error };
+  }
+};
+
+export const deleteServico = async (servicoId: string) => {
+  try {
+    await adminDb.collection('servicos').doc(servicoId).delete();
+    if (process.env.NODE_ENV === 'development') console.log('[deleteServico] ok');
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[deleteServico] erro:', error?.code ?? 'unknown');
+    return { ok: false as const, error };
+  }
+};
+

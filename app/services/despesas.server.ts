@@ -60,3 +60,34 @@ export const postNovaDespesa = async (
     return { ok: false, error };
   }
 };
+
+export const updateDespesa = async (despesaId: string, campos: Partial<Despesa>) => {
+  try {
+    const update: Record<string, any> = { ...campos };
+    // Recalcula valorParcela automaticamente se valor ou parcelas mudarem
+    if (campos.valorTotal !== undefined || campos.parcelas !== undefined) {
+      const snap = await adminDb.collection('despesas').doc(despesaId).get();
+      const atual = snap.data() as Despesa;
+      const novoTotal = campos.valorTotal ?? atual.valorTotal;
+      const novaParcelas = campos.parcelas ?? atual.parcelas;
+      update.valorParcela = Number((novoTotal / novaParcelas).toFixed(2));
+    }
+    await adminDb.collection('despesas').doc(despesaId).update(update);
+    if (process.env.NODE_ENV === 'development') console.log('[updateDespesa] ok', Object.keys(update));
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[updateDespesa] erro:', error?.code ?? 'unknown');
+    return { ok: false as const, error };
+  }
+};
+
+export const deleteDespesa = async (despesaId: string) => {
+  try {
+    await adminDb.collection('despesas').doc(despesaId).delete();
+    if (process.env.NODE_ENV === 'development') console.log('[deleteDespesa] ok');
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[deleteDespesa] erro:', error?.code ?? 'unknown');
+    return { ok: false as const, error };
+  }
+};
