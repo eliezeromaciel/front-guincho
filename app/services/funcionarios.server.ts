@@ -87,3 +87,33 @@ export const postNovoFuncionario = async (
   }
 };
 
+export const updateFuncionario = async (uid: string, data: Partial<FuncionarioDoc>) => {
+  try {
+    await adminDb.collection('funcionarios').doc(uid).update(data);
+    
+    // Se o nome foi alterado, atualiza também no Firebase Auth
+    if (data.nome) {
+      await adminAuth.updateUser(uid, { displayName: data.nome });
+    }
+    
+    return { ok: true };
+  } catch (error: any) {
+    console.error('[updateFuncionario] erro:', error);
+    return { ok: false, error: error?.message || 'Erro ao atualizar funcionário' };
+  }
+};
+
+export const deleteFuncionario = async (uid: string) => {
+  try {
+    // Apaga do Auth
+    await adminAuth.deleteUser(uid);
+    // Apaga do Firestore
+    await adminDb.collection('funcionarios').doc(uid).delete();
+    
+    return { ok: true };
+  } catch (error: any) {
+    console.error('[deleteFuncionario] erro:', error);
+    return { ok: false, error: error?.message || 'Erro ao deletar funcionário' };
+  }
+};
+

@@ -54,3 +54,23 @@ export const toggleSeguradora = async (id: string, ativa: boolean) => {
     return { ok: false as const, error };
   }
 };
+
+export const updateSeguradora = async (id: string, nome: string) => {
+  try {
+    await adminDb.collection('seguradoras').doc(id).update({ nome });
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[updateSeguradora] erro:', error);
+    return { ok: false as const, error: error?.message || 'Erro ao atualizar' };
+  }
+};
+
+export const deleteSeguradora = async (id: string) => {
+  try {
+    await adminDb.collection('seguradoras').doc(id).delete();
+    return { ok: true as const };
+  } catch (error: any) {
+    console.error('[deleteSeguradora] erro:', error);
+    return { ok: false as const, error: error?.message || 'Erro ao deletar' };
+  }
+};
