@@ -14,7 +14,7 @@ export interface Servico {
   motoristaUid: string;
   motoristaNome: string;
   detalhesVeiculo: string; // e.g. "corsa azul", "moto hornet preta"
-  status: 'pendente' | 'em_andamento' | 'concluido';
+  status: 'pendente' | 'em_andamento' | 'concluido' | 'cancelado';
   fotosEnviadas: boolean;
   createdAt: any;
   finalizedAt?: any;
@@ -132,8 +132,8 @@ export const uploadFotoServico = async (servicoId: string, base64: string) => {
   try {
     const subcollRef = adminDb.collection('servicos').doc(servicoId).collection('fotos');
     const existing = await subcollRef.count().get();
-    if (existing.data().count >= 4) {
-      return { ok: false as const, error: 'Limite de 4 fotos já atingido.' };
+    if (existing.data().count >= 10) {
+      return { ok: false as const, error: 'Limite de 10 fotos já atingido.' };
     }
     await subcollRef.add({
       base64,
@@ -144,7 +144,7 @@ export const uploadFotoServico = async (servicoId: string, base64: string) => {
     const snapshot = await subcollRef.get();
     const totalFotos = snapshot.size;
 
-    if (totalFotos >= 4) {
+    if (totalFotos >= 1) {
       await adminDb.collection('servicos').doc(servicoId).update({
         fotosEnviadas: true,
       });
@@ -168,6 +168,20 @@ export const finalizarServico = async (servicoId: string) => {
     return { ok: true };
   } catch (error: any) {
     console.error('[finalizarServico] erro:', error?.code ?? 'unknown');
+    return { ok: false, error };
+  }
+};
+
+export const cancelarServicoMotorista = async (servicoId: string) => {
+  try {
+    await adminDb.collection('servicos').doc(servicoId).update({
+      status: 'cancelado',
+      finalizedAt: FieldValue.serverTimestamp(),
+    });
+    if (process.env.NODE_ENV === 'development') console.log('[cancelarServicoMotorista] ok');
+    return { ok: true };
+  } catch (error: any) {
+    console.error('[cancelarServicoMotorista] erro:', error?.code ?? 'unknown');
     return { ok: false, error };
   }
 };

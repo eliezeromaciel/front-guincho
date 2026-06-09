@@ -31,7 +31,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 export const action = async ({ request }: Route.ActionArgs) => {
   const sessao = await requireAuth(request);
   const formData = await request.formData();
-  const intent = formData.get('intent') as 'upload_foto' | 'finalizar';
+  const intent = formData.get('intent') as 'upload_foto' | 'finalizar' | 'cancelar';
   const servicoId = ((formData.get('servicoId') as string) ?? '').trim();
 
   // IDs gerados pelo Firestore são alfanuméricos com 20 caracteres.
@@ -62,10 +62,15 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   if (intent === 'finalizar') {
     if (!doc.data()?.fotosEnviadas) {
-      return { ok: false, error: 'Envie as 4 fotos obrigatórias antes de finalizar.' };
+      return { ok: false, error: 'Envie pelo menos 1 foto obrigatória antes de finalizar.' };
     }
     const { finalizarServico } = await import('~/services/servicos.server');
     return await finalizarServico(servicoId);
+  }
+
+  if (intent === 'cancelar') {
+    const { cancelarServicoMotorista } = await import('~/services/servicos.server');
+    return await cancelarServicoMotorista(servicoId);
   }
 
   return { ok: false, error: 'Intenção inválida.' };
@@ -276,15 +281,15 @@ export default function Home() {
                   </div>
 
                   {/* Detalhes do Veículo */}
-                  <div className="bg-dark p-3 rounded-3 border border-secondary mb-4">
+                  <div className="bg-dark p-2 rounded-3 border border-secondary mb-4 opacity-75">
                     <div className="row align-items-center">
                       <div className="col-6">
-                        <span className="text-secondary small uppercase d-block">Veículo Guinchado</span>
-                        <strong className="text-light">{(servicoAtivo as any).detalhesVeiculo || <span className="text-secondary fst-italic fw-normal">Não informado</span>}</strong>
+                        <span className="text-secondary text-xs uppercase d-block">Veículo Guinchado</span>
+                        <span className="text-light small">{(servicoAtivo as any).detalhesVeiculo || <span className="text-secondary fst-italic">Não informado</span>}</span>
                       </div>
                       <div className="col-6 border-start border-secondary ps-3">
-                        <span className="text-secondary small uppercase d-block">Placa</span>
-                        <strong className="text-light font-mono h5 m-0">{(servicoAtivo as any).placaVeiculo || <span className="text-secondary fst-italic fw-normal" style={{ fontSize: '0.85rem' }}>Não informada</span>}</strong>
+                        <span className="text-secondary text-xs uppercase d-block">Placa</span>
+                        <span className="text-light small font-mono m-0">{(servicoAtivo as any).placaVeiculo || <span className="text-secondary fst-italic" style={{ fontSize: '0.75rem' }}>Não informada</span>}</span>
                       </div>
                     </div>
                   </div>
@@ -293,20 +298,20 @@ export default function Home() {
                   <div className="border border-secondary rounded-3 p-3 bg-black bg-opacity-30 mb-4">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                       <div>
-                        <h4 className="h6 fw-bold text-light mb-1 uppercase">Fotos Obrigatórias do Veículo</h4>
-                        <span className="text-secondary text-xs">Envie no mínimo 4 fotos para liberar a conclusão</span>
+                        <h4 className="h6 fw-bold text-light mb-1 uppercase">Fotos do Veículo</h4>
+                        <span className="text-secondary text-xs">Envie no mínimo 1 foto para liberar a conclusão</span>
                       </div>
-                      <span className={`badge ${fotosCount >= 4 ? 'bg-success' : 'bg-danger'} font-mono px-3 py-2`}>
-                        {fotosCount} / 4 fotos
+                      <span className={`badge ${fotosCount >= 1 ? 'bg-success' : 'bg-danger'} font-mono px-3 py-2`}>
+                        {fotosCount} foto{fotosCount !== 1 ? 's' : ''}
                       </span>
                     </div>
 
                     {/* Alerta de Fotos Pendentes */}
-                    {fotosCount < 4 ? (
+                    {fotosCount < 1 ? (
                       <div className="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger p-3 mb-3 small d-flex align-items-start gap-2 rounded-3 animate-pulse">
                         <i className="bi bi-exclamation-octagon-fill h5 m-0"></i>
                         <div>
-                          <strong>Atenção Motorista:</strong> Você deve fotografar o veículo nas 4 direções (Frente, Trás, Laterais) no local de retirada para poder concluir o serviço.
+                          <strong>Atenção Motorista:</strong> Você deve fotografar o veículo no local de retirada para poder concluir o serviço.
                         </div>
                       </div>
                     ) : (
@@ -344,7 +349,7 @@ export default function Home() {
                         ) : (
                           <>
                             <i className="bi bi-camera-fill h5 m-0"></i>
-                            Tirar e Enviar Foto
+                            {fotosCount === 0 ? 'Tirar e Enviar Foto' : 'Tirar Mais Fotos'}
                           </>
                         )}
                       </button>
@@ -359,7 +364,7 @@ export default function Home() {
                           </div>
                         </div>
                       ))}
-                      {Array.from({ length: Math.max(0, 4 - fotosCount) }).map((_, idx) => (
+                      {Array.from({ length: Math.max(0, 1 - fotosCount) }).map((_, idx) => (
                         <div key={idx} className="col-3">
                           <div className="ratio ratio-1x1 border border-dashed border-secondary rounded d-flex align-items-center justify-content-center bg-dark bg-opacity-20 text-secondary">
                             <i className="bi bi-image h4 m-0"></i>
@@ -370,19 +375,34 @@ export default function Home() {
                   </div>
 
                   {/* Ação de Conclusão de Serviço */}
-                  <fetcher.Form method="post">
-                    <input type="hidden" name="intent" value="finalizar" />
+                  <fetcher.Form method="post" className="d-grid gap-2">
                     <input type="hidden" name="servicoId" value={servicoAtivo.id} />
 
-                    <div className="d-grid">
-                      <button
-                        type="submit"
-                        className="btn btn-success btn-lg fw-bold rounded-3 min-h-[48px]"
-                        disabled={fotosCount < 4 || fetcher.state !== 'idle'}
-                      >
-                        {fetcher.state !== 'idle' ? 'Finalizando...' : 'Finalizar Serviço de Guincho'}
-                      </button>
-                    </div>
+                    <button
+                      type="submit"
+                      name="intent"
+                      value="finalizar"
+                      className="btn btn-success btn-lg fw-bold rounded-3 min-h-[48px]"
+                      disabled={fotosCount < 1 || fetcher.state !== 'idle'}
+                    >
+                      {fetcher.state !== 'idle' ? 'Processando...' : 'Finalizar Serviço de Guincho'}
+                    </button>
+
+                    <button
+                      type="submit"
+                      name="intent"
+                      value="cancelar"
+                      className="btn btn-outline-danger fw-bold rounded-3 min-h-[48px] mt-2"
+                      disabled={fetcher.state !== 'idle'}
+                      onClick={(e) => {
+                        if (!confirm('Tem certeza que deseja CANCELAR este serviço? Ele será encerrado imediatamente.')) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      <i className="bi bi-x-circle me-2"></i>
+                      Cancelar Serviço de Guincho
+                    </button>
                   </fetcher.Form>
                 </div>
               ) : (

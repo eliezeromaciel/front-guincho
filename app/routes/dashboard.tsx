@@ -160,7 +160,7 @@ type LinhaRelatorio = {
   quemRecebe: string;
   descricao: string;
   valor: number;
-  tipo: 'receita' | 'despesa' | 'faturado' | 'faturado-recebido';
+  tipo: 'receita' | 'despesa' | 'faturado' | 'faturado-recebido' | 'cancelado';
   servicoId?: string;
   despesaId?: string;
   faturadoStatus?: string;
@@ -313,6 +313,26 @@ export default function Dashboard() {
     const sDate = getJsDate(s.finalizedAt || s.createdAt);
     if (!sDate) return;
     const tipo = (s as any).tipoRecebedor || 'motorista';
+
+    if (s.status === 'cancelado') {
+      if (sDate.getMonth() === mesSelecionado && sDate.getFullYear() === anoSelecionado) {
+        linhas.push({
+          date: sDate,
+          motorista: s.motoristaNome || '—',
+          motoristaUid: s.motoristaUid,
+          quemRecebe: s.receiver || '—',
+          descricao: `[CANCELADO] ${s.detalhesVeiculo || s.placaVeiculo || 'Serviço'}`,
+          valor: s.valorCobrado,
+          tipo: 'cancelado',
+          servicoId: s.id,
+          rawValorCobrado: s.valorCobrado,
+          rawDataISO: sDate.toISOString().substring(0, 10),
+          rawMotoristaUid: s.motoristaUid,
+          rawQuemRecebeUid: s.quemRecebeUid ?? '',
+        });
+      }
+      return;
+    }
 
     if (tipo === 'seguradora') {
       const fStatus = (s as any).faturadoStatus || 'pendente';
@@ -591,6 +611,9 @@ export default function Dashboard() {
                     } else if (l.tipo === 'faturado') {
                       valorClass = 'text-warning';
                       rowStyle = { background: 'hsl(38 80% 15% / 0.15)' };
+                    } else if (l.tipo === 'cancelado') {
+                      valorClass = 'text-secondary text-decoration-line-through';
+                      rowStyle = { background: 'hsl(0 0% 15% / 0.3)' };
                     }
 
                     // Campo de data correto dependendo do tipo
