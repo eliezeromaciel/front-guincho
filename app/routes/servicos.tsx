@@ -152,6 +152,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // 4. Cadastra o Serviço
+  const dataServico = ((formData.get('dataServico') as string | null) ?? '').trim();
   const { postNovoServico } = await import('~/services/servicos.server');
   const novoServico = await postNovoServico(
     clienteId,
@@ -168,6 +169,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     tipoRecebedor,
     seguradoraId || undefined,
     seguradoraNome || undefined,
+    dataServico || undefined,
   );
 
   if (!novoServico.ok) {
@@ -397,10 +399,7 @@ export default function Servicos() {
           </h2>
         </div>
 
-        <h1 className="h3 fw-bold mb-1 text-white">Lançar Novo Serviço</h1>
-        <p className="text-secondary mb-4" style={{ fontSize: '0.95rem' }}>
-          Preencha os dados e o motorista será notificado em tempo real.
-        </p>
+        <h1 className="h3 fw-bold mb-4 text-white">Lançar Novo Serviço</h1>
 
         <fetcher.Form
           method="post"
@@ -425,129 +424,7 @@ export default function Servicos() {
           <input type="hidden" name="motoristaUid" value={motoristaUid} />
           <input type="hidden" name="motoristaNome" value={motoristaNome} />
 
-          {/* Seção Cliente */}
-          <h5 className="border-bottom border-secondary pb-2 mb-3 text-primary small fw-bold uppercase tracking-wider">
-            Informações do Cliente
-          </h5>
-
-          <div className="row">
-            <div className="col-12 col-md-8 mb-3 position-relative">
-              <label className="form-label fw-semibold text-light">Cliente (Nome ou Telefone)</label>
-              <input
-                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
-                type="text"
-                name="cliente"
-                placeholder="Busque por nome ou telefone..."
-                maxLength={50}
-                required
-                value={clienteSelecionado?.nome ?? ''}
-                onChange={handleChangeInputNome}
-                onBlur={() => setTimeout(() => setClientesFiltrados([]), 250)}
-              />
-              {clientesFiltrados.length > 0 && (
-                <ul className="list-group position-absolute w-100 shadow-lg bg-black border border-secondary mt-1 rounded-3 overflow-hidden" style={{ zIndex: 1000 }}>
-                  {clientesFiltrados.map((c, idx) => (
-                    <li
-                      key={idx}
-                      className="list-group-item list-group-item-action bg-dark text-white border-secondary p-3 option-hover"
-                      style={{ cursor: 'pointer' }}
-                      onMouseDown={() => handleClienteSelected(c)}
-                    >
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="fw-bold">{c.nome}</span>
-                        <span className="badge bg-secondary font-mono small">{c.telefone || 'Sem tel'}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="col-12 col-md-4 mb-3">
-              <label className="form-label fw-semibold text-light">Telefone</label>
-              <input
-                className="form-control form-control-lg bg-dark text-white border-secondary text-base min-h-[48px]"
-                type="tel"
-                name="clienteTelefone"
-                placeholder="(51) 99999-9999"
-                value={novoClienteTelefone}
-                onChange={(e) => setNovoClienteTelefone(e.target.value)}
-                disabled={!!clienteSelecionado?.id}
-              />
-            </div>
-          </div>
-
-          {/* Histórico do Cliente Recorrente */}
-          {history && (
-            <div className="alert alert-info border border-info border-opacity-25 bg-info bg-opacity-10 text-info p-3 mb-4 rounded-3 shadow-sm">
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <i className="bi bi-star-fill text-warning"></i>
-                <span className="fw-bold small uppercase">Histórico GuinchoFácil</span>
-              </div>
-              <p className="mb-0 small leading-relaxed">
-                Este cliente já efetuou <strong>{history.count}</strong> serviço(s) anteriormente.
-                <br />
-                Valor médio cobrado: <strong className="font-mono text-light">R$ {history.avg.toFixed(2)}</strong>.
-                <br />
-                <span className="text-secondary">Dica: Recomendamos manter valores próximos a R$ {history.avg.toFixed(0)} ou conceder desconto de cliente fiel.</span>
-              </p>
-            </div>
-          )}
-
-          {/* Seção Veículo */}
-          <h5 className="border-bottom border-secondary pb-2 mb-3 text-primary small fw-bold uppercase tracking-wider mt-2">
-            Detalhes do Veículo
-          </h5>
-
-          <div className="row">
-            <div className="col-12 col-md-5 mb-3 position-relative">
-              <label className="form-label fw-semibold text-light">Placa do Veículo</label>
-              <input
-                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px] font-mono"
-                type="text"
-                name="veiculo"
-                placeholder="Ex: ABC8K25"
-                maxLength={7}
-
-                value={veiculoSelecionado?.placa ?? ''}
-                onChange={handleChangeInputPlaca}
-                onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 250)}
-              />
-              {veiculosFiltrados.length > 0 && (
-                <ul className="list-group position-absolute w-100 shadow-lg bg-black border border-secondary mt-1 rounded-3 overflow-hidden" style={{ zIndex: 1000 }}>
-                  {veiculosFiltrados.map((v, idx) => (
-                    <li
-                      key={idx}
-                      className="list-group-item list-group-item-action bg-dark text-white border-secondary p-3 option-hover"
-                      style={{ cursor: 'pointer' }}
-                      onMouseDown={() => handlePlacaSelected(v)}
-                    >
-                      <div className="d-flex justify-content-between">
-                        <span className="fw-bold font-mono">{v.placa}</span>
-                        <span className="text-secondary small">{v.modelo}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="col-12 col-md-7 mb-3">
-              <label className="form-label fw-semibold text-light">Detalhes / Modelo (Cor, Tipo)</label>
-              <input
-                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
-                type="text"
-                name="detalhesVeiculo"
-                placeholder="Ex: corsa azul, moto hornet preta"
-                maxLength={50}
-
-                value={detalhesVeiculo}
-                onChange={(e) => setDetalhesVeiculo(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Seção Operação e Cobrança */}
+          {/* ── 1. Seção Operação e Cobrança ── */}
           <h5 className="border-bottom border-secondary pb-2 mb-3 text-primary small fw-bold uppercase tracking-wider mt-2">
             Operação e Cobrança
           </h5>
@@ -612,20 +489,88 @@ export default function Servicos() {
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="form-label fw-semibold text-light">Valor Cobrado (R$)</label>
-            <input
-              className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
-              type="number"
-              name="valorCobrado"
-              placeholder="Ex: 250"
-              min="1"
-              max="99999"
-              required
-            />
+          <div className="row">
+            <div className="col-12 col-md-6 mb-4">
+              <label className="form-label fw-semibold text-light">Valor Cobrado (R$)</label>
+              <input
+                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
+                type="number"
+                name="valorCobrado"
+                placeholder="Ex: 250"
+                min="1"
+                max="99999"
+                required
+              />
+            </div>
+            <div className="col-12 col-md-6 mb-4">
+              <label className="form-label fw-semibold text-light">Data (Opcional)</label>
+              <input
+                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
+                type="date"
+                name="dataServico"
+              />
+              <div className="text-secondary mt-1" style={{ fontSize: '0.75rem' }}>
+                Deixe em branco para usar a data de hoje.
+              </div>
+            </div>
           </div>
 
-          {/* Seção Endereços */}
+
+          {/* ── 2. Seção Veículo ── */}
+          <h5 className="border-bottom border-secondary pb-2 mb-3 text-primary small fw-bold uppercase tracking-wider mt-2">
+            Detalhes do Veículo
+          </h5>
+
+          <div className="row">
+            <div className="col-12 col-md-5 mb-3 position-relative">
+              <label className="form-label fw-semibold text-light">Placa do Veículo</label>
+              <input
+                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px] font-mono"
+                type="text"
+                name="veiculo"
+                placeholder="Ex: ABC8K25"
+                maxLength={7}
+
+                value={veiculoSelecionado?.placa ?? ''}
+                onChange={handleChangeInputPlaca}
+                onBlur={() => setTimeout(() => setVeiculosFiltrados([]), 250)}
+              />
+              {veiculosFiltrados.length > 0 && (
+                <ul className="list-group position-absolute w-100 shadow-lg bg-black border border-secondary mt-1 rounded-3 overflow-hidden" style={{ zIndex: 1000 }}>
+                  {veiculosFiltrados.map((v, idx) => (
+                    <li
+                      key={idx}
+                      className="list-group-item list-group-item-action bg-dark text-white border-secondary p-3 option-hover"
+                      style={{ cursor: 'pointer' }}
+                      onMouseDown={() => handlePlacaSelected(v)}
+                    >
+                      <div className="d-flex justify-content-between">
+                        <span className="fw-bold font-mono">{v.placa}</span>
+                        <span className="text-secondary small">{v.modelo}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="col-12 col-md-7 mb-3">
+              <label className="form-label fw-semibold text-light">Detalhes / Modelo (Cor, Tipo)</label>
+              <input
+                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
+                type="text"
+                name="detalhesVeiculo"
+                placeholder="Ex: corsa azul, moto hornet preta"
+                maxLength={50}
+
+                value={detalhesVeiculo}
+                onChange={(e) => setDetalhesVeiculo(e.target.value)}
+              />
+            </div>
+          </div>
+
+
+          {/* ── 3. Seção Endereços ── */}
           <h5 className="border-bottom border-secondary pb-2 mb-3 text-primary small fw-bold uppercase tracking-wider mt-2">
             Rotas / Endereços
           </h5>
@@ -657,6 +602,62 @@ export default function Servicos() {
               onChange={(e) => setEnderecoEntrega(e.target.value)}
             />
           </div>
+
+
+          {/* ── 4. Seção Cliente ── */}
+          <h5 className="border-bottom border-secondary pb-2 mb-3 text-primary small fw-bold uppercase tracking-wider mt-2">
+            Informações do Cliente
+          </h5>
+
+          <div className="row">
+            <div className="col-12 mb-3 position-relative">
+              <label className="form-label fw-semibold text-light">Cliente (Busca por Nome ou Telefone)</label>
+              <input
+                className="form-control form-control-lg bg-dark text-white border-secondary focus:border-primary text-base min-h-[48px]"
+                type="text"
+                name="cliente"
+                placeholder="Busque por nome ou telefone..."
+                maxLength={50}
+                required
+                value={clienteSelecionado?.nome ?? ''}
+                onChange={handleChangeInputNome}
+                onBlur={() => setTimeout(() => setClientesFiltrados([]), 250)}
+              />
+              {clientesFiltrados.length > 0 && (
+                <ul className="list-group position-absolute w-100 shadow-lg bg-black border border-secondary mt-1 rounded-3 overflow-hidden" style={{ zIndex: 1000 }}>
+                  {clientesFiltrados.map((c, idx) => (
+                    <li
+                      key={idx}
+                      className="list-group-item list-group-item-action bg-dark text-white border-secondary p-3 option-hover"
+                      style={{ cursor: 'pointer' }}
+                      onMouseDown={() => handleClienteSelected(c)}
+                    >
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="fw-bold">{c.nome}</span>
+                        <span className="badge bg-secondary font-mono small">{c.telefone || 'Sem tel'}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* O campo Telefone antigo foi removido por solicitação (comentado internamente no HTML se quisesse, mas decidi arrancar fora de fato para manter limpo, já que você pediu para "nao mais apareca") */}
+          </div>
+
+          {/* Histórico do Cliente Recorrente */}
+          {history && (
+            <div className="alert alert-info border border-info border-opacity-25 bg-info bg-opacity-10 text-info p-3 mb-4 rounded-3 shadow-sm">
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <i className="bi bi-star-fill text-warning"></i>
+                <span className="fw-bold small uppercase">Histórico GuinchoFácil</span>
+              </div>
+              <p className="mb-0 small leading-relaxed">
+                Este cliente já efetuou <strong>{history.count}</strong> serviço(s) anteriormente.
+              </p>
+            </div>
+          )}
+
 
           {fetcher.data && !fetcher.data.ok ? (
             <div className="alert alert-danger py-2 px-3 mb-3 border-0 bg-danger bg-opacity-25 text-danger rounded-3" role="alert">

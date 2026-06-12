@@ -204,7 +204,7 @@ export default function Home() {
                 <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
                   <Link to="/relatoriosfinanceiros" className="card-link">
                     <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
-                      <div className="text-primary mb-3">
+                      <div className="text-success mb-3">
                         <i className="bi bi-graph-up-arrow display-4"></i>
                       </div>
                       <h3 className="h5 fw-bold text-white mb-2">Painel Financeiro</h3>

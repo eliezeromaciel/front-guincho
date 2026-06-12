@@ -56,6 +56,7 @@ export const postNovoServico = async (
   tipoRecebedor: 'motorista' | 'seguradora' | 'nenhum' = 'nenhum',
   seguradoraId?: string,
   seguradoraNome?: string,
+  dataServico?: string,
 ) => {
   try {
     const docData: Record<string, any> = {
@@ -73,7 +74,7 @@ export const postNovoServico = async (
       status: 'pendente',
       fotosEnviadas: false,
       tipoRecebedor,
-      createdAt: FieldValue.serverTimestamp(),
+      createdAt: dataServico ? new Date(dataServico + 'T12:00:00') : FieldValue.serverTimestamp(),
     };
 
     // Campos específicos de faturamento para seguradora
