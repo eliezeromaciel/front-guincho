@@ -219,6 +219,9 @@ export default function Dashboard() {
   // Estado do modal de confirmação de exclusão
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
+  // Estado do modal de edição mobile
+  const [mobileEditingRow, setMobileEditingRow] = useState<LinhaRelatorio | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
 
@@ -338,24 +341,26 @@ export default function Dashboard() {
       const fStatus = (s as any).faturadoStatus || 'pendente';
       const segNome = (s as any).seguradoraNome || s.receiver || 'Seguradora';
 
-      if (sDate.getMonth() === mesSelecionado && sDate.getFullYear() === anoSelecionado) {
-        linhas.push({
-          date: sDate,
-          motorista: s.motoristaNome || '—',
-          motoristaUid: s.motoristaUid,
-          quemRecebe: `Faturado ${segNome}`,
-          descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
-          valor: s.valorCobrado,
-          tipo: 'faturado',
-          servicoId: s.id,
-          faturadoStatus: fStatus,
-          rawValorCobrado: s.valorCobrado,
-          rawDataISO: sDate.toISOString().substring(0, 10),
-          rawMotoristaUid: s.motoristaUid,
-        });
-      }
-
-      if (fStatus === 'recebido') {
+      if (fStatus === 'pendente') {
+        // Previsão de recebimento: 30 dias após o serviço
+        const previsaoRecebimento = new Date(sDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        if (previsaoRecebimento.getMonth() === mesSelecionado && previsaoRecebimento.getFullYear() === anoSelecionado) {
+          linhas.push({
+            date: previsaoRecebimento,
+            motorista: s.motoristaNome || '—',
+            motoristaUid: s.motoristaUid,
+            quemRecebe: `Faturado ${segNome}`,
+            descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
+            valor: s.valorCobrado,
+            tipo: 'faturado',
+            servicoId: s.id,
+            faturadoStatus: fStatus,
+            rawValorCobrado: s.valorCobrado,
+            rawDataISO: sDate.toISOString().substring(0, 10),
+            rawMotoristaUid: s.motoristaUid,
+          });
+        }
+      } else if (fStatus === 'recebido') {
         const recebidoEm = getJsDate((s as any).faturadoRecebidoEm);
         if (recebidoEm && recebidoEm.getMonth() === mesSelecionado && recebidoEm.getFullYear() === anoSelecionado) {
           linhas.push({
@@ -471,58 +476,46 @@ export default function Dashboard() {
             <p className="text-secondary small mb-0">Toque em qualquer célula para editar • 🗑️ para excluir</p>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <button onClick={() => navegarMes(-1)} className="btn btn-dark btn-sm rounded-circle border border-secondary d-flex align-items-center justify-content-center" style={{ width: 36, height: 36 }}>
+            <button onClick={() => navegarMes(-1)} className="btn btn-dark rounded-circle border border-secondary d-flex align-items-center justify-content-center" style={{ width: 44, height: 44 }}>
               <i className="bi bi-chevron-left" />
             </button>
-            <div className="px-4 py-2 rounded-3 border border-secondary fw-bold text-center" style={{ background: 'hsl(220 16% 13%)', minWidth: '180px' }}>
-              {nomesMeses[mesSelecionado]} {anoSelecionado}
+            <div className="px-3 py-2 rounded-3 border border-secondary fw-bold text-center" style={{ background: 'hsl(220 16% 13%)', minWidth: '140px', fontSize: '1rem' }}>
+              {nomesMeses[mesSelecionado]} <span className="d-none d-sm-inline">{anoSelecionado}</span><span className="d-inline d-sm-none">{String(anoSelecionado).substring(2)}</span>
             </div>
-            <button onClick={() => navegarMes(1)} className="btn btn-dark btn-sm rounded-circle border border-secondary d-flex align-items-center justify-content-center" style={{ width: 36, height: 36 }}>
+            <button onClick={() => navegarMes(1)} className="btn btn-dark rounded-circle border border-secondary d-flex align-items-center justify-content-center" style={{ width: 44, height: 44 }}>
               <i className="bi bi-chevron-right" />
             </button>
             <a
               href={`/api/download-relatorio?mes=${mesSelecionado + 1}&ano=${anoSelecionado}`}
-              className="btn btn-sm rounded-pill px-3 fw-bold ms-2"
-              style={{ background: 'linear-gradient(135deg, hsl(142 71% 40%), hsl(160 60% 35%))', color: '#fff', border: 'none' }}
+              className="btn rounded-pill px-3 fw-bold ms-1"
+              style={{ background: 'linear-gradient(135deg, hsl(142 71% 40%), hsl(160 60% 35%))', color: '#fff', border: 'none', height: 44, display: 'flex', alignItems: 'center' }}
             >
-              <i className="bi bi-file-earmark-excel me-1" /> Baixar Excel
+              <i className="bi bi-file-earmark-excel me-md-1" /> <span className="d-none d-md-inline">Baixar Excel</span>
             </a>
           </div>
         </div>
 
         {/* Cards de Métricas */}
         <div className="row g-3 mb-4">
-          <div className="col-6 col-md-4 col-lg-2">
+          <div className="col-6 col-md-4 col-lg-3">
             <div className="gf-metric-card metric-success p-3">
               <span style={{ color: 'hsl(220 10% 55%)' }} className="fw-semibold small d-block mb-1">Total Receitas</span>
               <h4 className="h5 fw-bold mb-0" style={{ color: 'hsl(142 71% 50%)' }}>{fmt(totalReceitas)}</h4>
             </div>
           </div>
-          <div className="col-6 col-md-4 col-lg-2">
+          <div className="col-6 col-md-4 col-lg-3">
             <div className="gf-metric-card metric-danger p-3">
               <span style={{ color: 'hsl(220 10% 55%)' }} className="fw-semibold small d-block mb-1">Total Despesas</span>
               <h4 className="h5 fw-bold mb-0" style={{ color: 'hsl(0 84% 60%)' }}>{fmt(totalDespesas)}</h4>
             </div>
           </div>
-          <div className="col-6 col-md-4 col-lg-2">
+          <div className="col-6 col-md-4 col-lg-3">
             <div className="gf-metric-card metric-primary p-3">
               <span style={{ color: 'hsl(220 10% 55%)' }} className="fw-semibold small d-block mb-1">Saldo Líquido</span>
               <h4 className="h5 fw-bold mb-0" style={{ color: saldoLiquido >= 0 ? 'hsl(217 91% 60%)' : 'hsl(38 92% 50%)' }}>{fmt(saldoLiquido)}</h4>
             </div>
           </div>
-          <div className="col-6 col-md-4 col-lg-2">
-            <div className="gf-metric-card p-3" style={{ borderLeft: '3px solid hsl(38 92% 50%)' }}>
-              <span style={{ color: 'hsl(220 10% 55%)' }} className="fw-semibold small d-block mb-1">Faturados Pendentes</span>
-              <h4 className="h5 fw-bold mb-0" style={{ color: 'hsl(38 92% 50%)' }}>{fmt(totalFaturadosPendentes)}</h4>
-            </div>
-          </div>
-          <div className="col-6 col-md-4 col-lg-2">
-            <div className="gf-metric-card p-3" style={{ borderLeft: '3px solid hsl(270 60% 55%)' }}>
-              <span style={{ color: 'hsl(220 10% 55%)' }} className="fw-semibold small d-block mb-1">Fat. Recebidos</span>
-              <h4 className="h5 fw-bold mb-0" style={{ color: 'hsl(270 60% 55%)' }}>{fmt(totalFaturadosRecebidos)}</h4>
-            </div>
-          </div>
-          <div className="col-6 col-md-4 col-lg-2">
+          <div className="col-6 col-md-4 col-lg-3">
             <div className="gf-metric-card metric-info p-3">
               <span style={{ color: 'hsl(220 10% 55%)' }} className="fw-semibold small d-block mb-1">Guinchos</span>
               <h4 className="h5 fw-bold mb-0" style={{ color: 'hsl(199 89% 55%)' }}>
@@ -559,29 +552,29 @@ export default function Dashboard() {
         </div>
 
         {/* ── TABELA DETALHADA ─────────────────────────────────────────────── */}
-        <div className="bg-black bg-opacity-50 border border-secondary rounded-3 p-3 shadow-sm mb-4">
-          <div className="d-flex align-items-center justify-content-between mb-2">
+        <div className="bg-black bg-opacity-50 border border-secondary rounded-3 p-0 p-lg-3 shadow-sm mb-4 overflow-hidden">
+          <div className="d-flex align-items-center justify-content-between mb-2 px-2 pt-3 px-lg-0 pt-lg-0">
             <h3 className="h5 fw-bold m-0 text-light">
               <i className="bi bi-table me-2" />
               Lançamentos — {nomesMeses[mesSelecionado]} {anoSelecionado}
             </h3>
-            <span className="badge bg-secondary rounded-pill">{linhas.length} registros</span>
+            <span className="badge bg-secondary rounded-pill me-2 me-lg-0">{linhas.length} registros</span>
           </div>
-          <p className="text-secondary small mb-3" style={{ fontSize: '0.78rem' }}>
+          <p className="text-secondary small mb-3 px-2 px-lg-0" style={{ fontSize: '0.78rem' }}>
             Toque em qualquer célula para editar diretamente.
           </p>
 
           <div className="table-responsive">
-            <table className="table table-dark table-hover table-borderless align-middle mb-0">
+            <table className="table table-dark table-hover table-borderless align-middle mb-0 w-100">
               <thead>
                 <tr style={{ background: 'hsl(220 16% 18%)', borderBottom: '2px solid hsl(220 10% 30%)' }}>
-                  <th className="small fw-bold text-secondary py-3" style={{ width: '90px' }}>Data</th>
-                  <th className="small fw-bold text-secondary py-3" style={{ width: '120px' }}>Motorista</th>
-                  <th className="small fw-bold text-secondary py-3" style={{ width: '170px' }}>Quem Recebe</th>
-                  <th className="small fw-bold text-secondary py-3">Descrição</th>
-                  <th className="small fw-bold text-secondary py-3 text-end" style={{ width: '120px' }}>Valor (R$)</th>
-                  <th className="small fw-bold text-secondary py-3 text-center" style={{ width: '44px' }}>
-                    <i className="bi bi-trash3" />
+                  <th className="small fw-bold text-secondary py-2 py-lg-3 px-1 px-lg-2" style={{ width: '50px' }}>Data</th>
+                  <th className="small fw-bold text-secondary py-2 py-lg-3 px-1 px-lg-2 d-none d-lg-table-cell" style={{ width: '120px' }}>Motorista</th>
+                  <th className="small fw-bold text-secondary py-2 py-lg-3 px-1 px-lg-2" style={{ width: 'auto' }}>Quem Recebe</th>
+                  <th className="small fw-bold text-secondary py-2 py-lg-3 px-1 px-lg-2 d-none d-lg-table-cell">Descrição</th>
+                  <th className="small fw-bold text-secondary py-2 py-lg-3 px-1 px-lg-2 text-end" style={{ width: '90px' }}>Valor (R$)</th>
+                  <th className="small fw-bold text-secondary py-2 py-lg-3 px-1 px-lg-2 text-center" style={{ width: '32px' }}>
+                    <i className="bi bi-gear" />
                   </th>
                 </tr>
               </thead>
@@ -623,7 +616,7 @@ export default function Dashboard() {
                       <tr key={rowKey} className="border-bottom border-secondary" style={rowStyle}>
 
                         {/* ── DATA ──────────────────────────────────────── */}
-                        <td className="py-2" style={editableTd(isEditable)}>
+                        <td className="py-1 py-lg-2 px-1 px-lg-2" style={editableTd(isEditable)}>
                           {isCellActive(rowKey, 'data') ? (
                             <input
                               ref={inputRef}
@@ -669,7 +662,7 @@ export default function Dashboard() {
                         </td>
 
                         {/* ── MOTORISTA ─────────────────────────────────── */}
-                        <td className="py-2" style={editableTd(isEditable && !!l.servicoId)}>
+                        <td className="py-1 py-lg-2 px-1 px-lg-2 d-none d-lg-table-cell" style={editableTd(isEditable && !!l.servicoId)}>
                           {isCellActive(rowKey, 'motoristaUid') ? (
                             <select
                               ref={selectRef}
@@ -699,7 +692,7 @@ export default function Dashboard() {
 
                         {/* ── QUEM RECEBE / CAMINHÃO ─────────────────────── */}
                         <td
-                          className="py-2"
+                          className="py-1 py-lg-2 px-1 px-lg-2"
                           style={editableTd(
                             isEditable && (!!l.despesaId || l.tipo === 'receita')
                           )}
@@ -763,7 +756,7 @@ export default function Dashboard() {
                         </td>
 
                         {/* ── DESCRIÇÃO ─────────────────────────────────── */}
-                        <td className="py-2" style={editableTd(isEditable)}>
+                        <td className="py-1 py-lg-2 px-1 px-lg-2 d-none d-lg-table-cell" style={editableTd(isEditable)}>
                           {isCellActive(rowKey, 'descricao') ? (
                             <input
                               ref={inputRef}
@@ -785,7 +778,7 @@ export default function Dashboard() {
                         </td>
 
                         {/* ── VALOR ─────────────────────────────────────── */}
-                        <td className="py-2 text-end" style={editableTd(isEditable)}>
+                        <td className="py-1 py-lg-2 px-1 px-lg-2 text-end" style={editableTd(isEditable)}>
                           {isCellActive(rowKey, 'valor') ? (
                             <input
                               ref={inputRef}
@@ -808,24 +801,34 @@ export default function Dashboard() {
                           )}
                         </td>
 
-                        {/* ── EXCLUIR ───────────────────────────────────── */}
-                        <td className="py-2 text-center">
+                        {/* ── EXCLUIR / EDITAR ───────────────────────────────────── */}
+                        <td className="py-1 py-lg-2 px-1 px-lg-2 text-center">
                           {isEditable && (
-                            <button
-                              className="btn btn-link p-0"
-                              style={{ color: 'hsl(0 84% 55%)', opacity: 0.7 }}
-                              title="Excluir lançamento"
-                              onClick={() =>
-                                setDeleteTarget({
-                                  id: (l.servicoId ?? l.despesaId) as string,
-                                  tipo: l.servicoId ? 'servico' : 'despesa',
-                                  descricao: l.descricao,
-                                  valor: Math.abs(l.valor),
-                                })
-                              }
-                            >
-                              <i className="bi bi-trash3" style={{ fontSize: '0.95rem' }} />
-                            </button>
+                            <>
+                              <button
+                                className="btn btn-link p-0 d-none d-lg-inline-block"
+                                style={{ color: 'hsl(0 84% 55%)', opacity: 0.7 }}
+                                title="Excluir lançamento"
+                                onClick={() =>
+                                  setDeleteTarget({
+                                    id: (l.servicoId ?? l.despesaId) as string,
+                                    tipo: l.servicoId ? 'servico' : 'despesa',
+                                    descricao: l.descricao,
+                                    valor: Math.abs(l.valor),
+                                  })
+                                }
+                              >
+                                <i className="bi bi-trash3" style={{ fontSize: '0.95rem' }} />
+                              </button>
+                              <button
+                                className="btn btn-link p-0 d-inline-block d-lg-none"
+                                style={{ color: 'hsl(217 91% 60%)', opacity: 0.8 }}
+                                title="Editar lançamento"
+                                onClick={() => setMobileEditingRow(l)}
+                              >
+                                <i className="bi bi-pencil-square" style={{ fontSize: '1.2rem' }} />
+                              </button>
+                            </>
                           )}
                         </td>
                       </tr>
@@ -843,10 +846,13 @@ export default function Dashboard() {
               {linhas.length > 0 && (
                 <tfoot>
                   <tr style={{ background: 'hsl(220 16% 15%)', borderTop: '2px solid hsl(220 10% 30%)' }}>
-                    <td colSpan={5} className="fw-bold text-light py-3">TOTAL DO MÊS</td>
-                    <td className={`text-end fw-bold font-mono py-3 ${saldoLiquido >= 0 ? 'text-success' : 'text-danger'}`}>
+                    <td colSpan={4} className="fw-bold text-light py-3 d-none d-lg-table-cell">TOTAL DO MÊS</td>
+                    <td colSpan={2} className="fw-bold text-light py-3 d-table-cell d-lg-none">TOTAL DO MÊS</td>
+                    <td className={`text-end fw-bold font-mono py-3 px-1 px-lg-2 ${saldoLiquido >= 0 ? 'text-success' : 'text-danger'}`}>
                       {saldoLiquido >= 0 ? '+' : ''}{fmt(saldoLiquido)}
                     </td>
+                    <td className="d-none d-lg-table-cell"></td>
+                    <td className="d-table-cell d-lg-none"></td>
                   </tr>
                 </tfoot>
               )}
@@ -880,8 +886,8 @@ export default function Dashboard() {
                         <span className="text-warning fw-bold font-mono">{fmt(valor)}</span>
                       </div>
                       {itens.map((item) => (
-                        <div key={item.servicoId} className="d-flex align-items-center justify-content-between py-1 border-top border-secondary">
-                          <div>
+                        <div key={item.servicoId} className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between py-2 border-top border-secondary gap-2">
+                          <div className="text-truncate">
                             <small className="text-secondary">{item.date.toLocaleDateString('pt-BR')}</small>
                             <small className="text-light ms-2">{item.descricao}</small>
                             <small className="text-secondary ms-1">({item.motorista})</small>
@@ -1022,6 +1028,150 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      {/* ── MODAL DE EDIÇÃO MOBILE ─────────────────────────────────────────── */}
+      {mobileEditingRow && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setMobileEditingRow(null); cancelEdit(); } }}
+        >
+          <div
+            style={{ background: 'hsl(220 18% 12%)', border: '1px solid hsl(220 10% 30%)', borderRadius: '16px', padding: '1.5rem', maxWidth: '400px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.6)' }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
+              <h5 className="text-white fw-bold m-0"><i className="bi bi-pencil-square me-2" /> Editar Lançamento</h5>
+              <button className="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style={{ width: 32, height: 32 }} onClick={() => { setMobileEditingRow(null); cancelEdit(); }}>
+                <i className="bi bi-x-lg" />
+              </button>
+            </div>
+            {(() => {
+              const l = mobileEditingRow;
+              const rowKey = l.servicoId ? `mob-${l.servicoId}` : l.despesaId ? `mob-${l.despesaId}` : `mob-r`;
+              const isEditable = !!(l.servicoId || l.despesaId);
+              const dateField = l.servicoId ? 'finalizedAt' : 'dataPagamento';
+              
+              let valorClass = 'text-light';
+              if (l.tipo === 'receita') valorClass = 'text-success';
+              else if (l.tipo === 'despesa') valorClass = 'text-danger';
+              else if (l.tipo === 'faturado') valorClass = 'text-warning';
+
+              return (
+                <div className="d-flex flex-column gap-3">
+                  {/* Data e Valor */}
+                  <div className="d-flex gap-2">
+                    <div className="flex-fill">
+                      <label className="text-secondary small fw-semibold mb-1 d-block">Data</label>
+                      {isCellActive(rowKey, 'data') ? (
+                        <input type="date" ref={inputRef} value={editingValue} style={inlineInputStyle} onChange={(e) => setEditingValue(e.target.value)}
+                          onBlur={() => {
+                            if (editingValue.trim() !== originalValue.trim()) {
+                              const fd = new FormData();
+                              if (l.servicoId) { fd.append('intent', 'edit-servico'); fd.append('servicoId', l.servicoId); }
+                              else if (l.despesaId) { fd.append('intent', 'edit-despesa'); fd.append('despesaId', l.despesaId); }
+                              fd.append('campo', dateField); fd.append('valor', editingValue);
+                              fetcher.submit(fd, { method: 'post' });
+                              setMobileEditingRow({ ...l, date: new Date(editingValue + 'T12:00:00'), rawDataISO: editingValue });
+                            }
+                            cancelEdit();
+                          }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') cancelEdit(); }}
+                        />
+                      ) : (
+                        <div className="p-2 rounded border border-secondary" style={{ background: 'hsl(220 16% 16%)', cursor: 'pointer' }} onClick={() => activateEdit(rowKey, 'data', l.rawDataISO ?? '')}>
+                          <span className="text-light">{l.date.toLocaleDateString('pt-BR')}</span> <i className="bi bi-pencil-fill ms-1 text-secondary small" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-fill">
+                      <label className="text-secondary small fw-semibold mb-1 d-block">Valor (R$)</label>
+                      {isCellActive(rowKey, 'valor') ? (
+                        <input type="number" step="0.01" ref={inputRef} value={editingValue} style={inlineInputStyle} onChange={(e) => setEditingValue(e.target.value)}
+                          onBlur={() => {
+                            if (editingValue.trim() !== originalValue.trim()) {
+                              const fd = new FormData();
+                              if (l.servicoId) { fd.append('intent', 'edit-servico'); fd.append('servicoId', l.servicoId); }
+                              else if (l.despesaId) { fd.append('intent', 'edit-despesa'); fd.append('despesaId', l.despesaId); }
+                              fd.append('campo', l.servicoId ? 'valorCobrado' : 'valorTotal'); fd.append('valor', editingValue);
+                              fetcher.submit(fd, { method: 'post' });
+                              setMobileEditingRow({ ...l, valor: Number(editingValue) });
+                            }
+                            cancelEdit();
+                          }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') cancelEdit(); }}
+                        />
+                      ) : (
+                        <div className="p-2 rounded border border-secondary text-end" style={{ background: 'hsl(220 16% 16%)', cursor: 'pointer' }} onClick={() => activateEdit(rowKey, 'valor', String(Math.abs(l.valor)))}>
+                          <span className={`fw-bold font-mono ${valorClass}`}>{fmt(Math.abs(l.valor))}</span> <i className="bi bi-pencil-fill ms-1 text-secondary small" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Descrição */}
+                  <div>
+                    <label className="text-secondary small fw-semibold mb-1 d-block">Descrição</label>
+                    {isCellActive(rowKey, 'descricao') ? (
+                      <input type="text" ref={inputRef} value={editingValue} style={inlineInputStyle} onChange={(e) => setEditingValue(e.target.value)}
+                        onBlur={() => {
+                          if (editingValue.trim() !== originalValue.trim()) {
+                            const fd = new FormData();
+                            if (l.servicoId) { fd.append('intent', 'edit-servico'); fd.append('servicoId', l.servicoId); }
+                            else if (l.despesaId) { fd.append('intent', 'edit-despesa'); fd.append('despesaId', l.despesaId); }
+                            fd.append('campo', l.servicoId ? 'detalhesVeiculo' : 'descricao'); fd.append('valor', editingValue);
+                            fetcher.submit(fd, { method: 'post' });
+                            setMobileEditingRow({ ...l, descricao: editingValue });
+                          }
+                          cancelEdit();
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') cancelEdit(); }}
+                      />
+                    ) : (
+                      <div className="p-2 rounded border border-secondary" style={{ background: 'hsl(220 16% 16%)', cursor: 'pointer' }} onClick={() => activateEdit(rowKey, 'descricao', l.descricao)}>
+                        <span className="text-light">{l.descricao}</span> <i className="bi bi-pencil-fill ms-1 text-secondary small" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Motorista (se houver) */}
+                  {!!l.servicoId && (
+                    <div>
+                      <label className="text-secondary small fw-semibold mb-1 d-block">Motorista</label>
+                      {isCellActive(rowKey, 'motoristaUid') ? (
+                        <select ref={selectRef} value={editingValue} style={inlineSelectStyle} onChange={(e) => setEditingValue(e.target.value)}
+                          onBlur={() => {
+                            if (editingValue.trim() !== originalValue.trim()) {
+                              const fd = new FormData();
+                              fd.append('intent', 'edit-servico'); fd.append('servicoId', l.servicoId!);
+                              fd.append('campo', 'motoristaUid'); fd.append('valor', editingValue);
+                              fetcher.submit(fd, { method: 'post' });
+                              const novoNome = funcionarios.find(f => f.uid === editingValue)?.displayName || editingValue;
+                              setMobileEditingRow({ ...l, motorista: novoNome, rawMotoristaUid: editingValue });
+                            }
+                            cancelEdit();
+                          }}
+                        >
+                          {funcionarios.map((f) => <option key={f.uid} value={f.uid}>{f.displayName}</option>)}
+                        </select>
+                      ) : (
+                        <div className="p-2 rounded border border-secondary" style={{ background: 'hsl(220 16% 16%)', cursor: 'pointer' }} onClick={() => activateEdit(rowKey, 'motoristaUid', l.rawMotoristaUid ?? '')}>
+                          <span className="text-light">{l.motorista}</span> <i className="bi bi-pencil-fill ms-1 text-secondary small" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Botão Excluir */}
+                  <div className="mt-4">
+                    <button className="btn btn-outline-danger w-100 fw-bold rounded-pill" onClick={() => { setDeleteTarget({ id: (l.servicoId ?? l.despesaId) as string, tipo: l.servicoId ? 'servico' : 'despesa', descricao: l.descricao, valor: Math.abs(l.valor) }); setMobileEditingRow(null); }}>
+                      <i className="bi bi-trash3 me-2" /> Excluir Lançamento
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
