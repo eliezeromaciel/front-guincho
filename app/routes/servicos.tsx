@@ -176,26 +176,47 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return { ok: false as const, error: 'Erro ao cadastrar serviço no Firestore.' };
   }
 
-  // 5. Enviar Notificação Web Push para o Motorista Escolhido
-  try {
-    const { enviarNotificacaoServidor } = await import('~/services/webpush.server');
-    await enviarNotificacaoServidor(
-      motoristaUid,
-      'Novo serviço de guincho!',
-      [
-        detalhesVeiculo && veiculoPlaca ? `Veículo: ${detalhesVeiculo} (${veiculoPlaca})` :
-        detalhesVeiculo ? `Veículo: ${detalhesVeiculo}` :
-        veiculoPlaca ? `Placa: ${veiculoPlaca}` : null,
-        enderecoRetirada ? `De: ${enderecoRetirada}` : null,
-        enderecoEntrega ? `Para: ${enderecoEntrega}` : null,
-        tipoRecebedor === 'seguradora' ? `Faturado: ${seguradoraNome}` : null,
-      ].filter(Boolean).join(' — ') || 'Novo serviço atribuído a você.'
-    );
-  } catch (err) {
-    console.log('[servicos action] falha ao enviar notificação push:', err);
+  // 5. Enviar Notificação Web Push para o Motorista Escolhido (apenas se for a data de hoje)
+  let isTodayDate = true;
+  let isFutureDate = false;
+  if (dataServico) {
+    const today = new Date();
+    // Converter YYYY-MM-DD para ano, mês, dia localmente para evitar problemas de fuso
+    const [year, month, day] = dataServico.split('-').map(Number);
+    const serviceDate = new Date(year, month - 1, day);
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    if (serviceDate < todayDate) {
+      isTodayDate = false;
+    } else if (serviceDate > todayDate) {
+      isTodayDate = false;
+      isFutureDate = true;
+    }
   }
 
-  return { ok: true as const };
+  let notificado = false;
+  if (isTodayDate) {
+    try {
+      const { enviarNotificacaoServidor } = await import('~/services/webpush.server');
+      await enviarNotificacaoServidor(
+        motoristaUid,
+        'Novo serviço de guincho!',
+        [
+          detalhesVeiculo && veiculoPlaca ? `Veículo: ${detalhesVeiculo} (${veiculoPlaca})` :
+          detalhesVeiculo ? `Veículo: ${detalhesVeiculo}` :
+          veiculoPlaca ? `Placa: ${veiculoPlaca}` : null,
+          enderecoRetirada ? `De: ${enderecoRetirada}` : null,
+          enderecoEntrega ? `Para: ${enderecoEntrega}` : null,
+          tipoRecebedor === 'seguradora' ? `Faturado: ${seguradoraNome}` : null,
+        ].filter(Boolean).join(' — ') || 'Novo serviço atribuído a você.'
+      );
+      notificado = true;
+    } catch (err) {
+      console.log('[servicos action] falha ao enviar notificação push:', err);
+    }
+  }
+
+  return { ok: true as const, notificado, isFutureDate };
 };
 
 export default function Servicos() {
@@ -370,7 +391,13 @@ export default function Servicos() {
     if (fetcher.state === 'idle' && wasSubmitting.current) {
       wasSubmitting.current = false;
       if (fetcher.data?.ok) {
-        alert('Serviço criado e motorista notificado via Web Push!');
+        if (fetcher.data.notificado) {
+          alert('Serviço criado e motorista notificado via Web Push!');
+        } else if (fetcher.data.isFutureDate) {
+          alert('Serviço agendado com sucesso! O motorista será notificado apenas no dia do serviço.');
+        } else {
+          alert('Serviço retroativo criado com sucesso!');
+        }
         resetarFormulario();
       } else if (fetcher.data && !fetcher.data.ok) {
         alert(`Erro: ${fetcher.data.error}`);
