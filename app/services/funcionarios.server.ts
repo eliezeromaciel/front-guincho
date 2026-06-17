@@ -26,6 +26,16 @@ export const verificarFuncionarioExiste = async (uid: string): Promise<boolean> 
   }
 };
 
+export const getFuncionarioPorId = async (uid: string): Promise<FuncionarioDoc | null> => {
+  try {
+    const snap = await adminDb.collection('funcionarios').doc(uid).get();
+    return snap.exists ? (snap.data() as FuncionarioDoc) : null;
+  } catch (error: any) {
+    console.error('[getFuncionarioPorId] erro:', error?.code ?? 'unknown');
+    return null;
+  }
+};
+
 export const getFuncionarios = async (): Promise<Funcionario[]> => {
   try {
     const snap = await adminDb.collection('funcionarios').get();

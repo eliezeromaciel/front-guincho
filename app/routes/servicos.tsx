@@ -94,21 +94,21 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // Busca nome do motorista do Firestore
-  const { adminDb } = await import('~/services/firebaseAdmin.server');
-  const motoristaDoc = await adminDb.collection('funcionarios').doc(motoristaUid).get();
-  if (!motoristaDoc.exists) {
+  const { getFuncionarioPorId } = await import('~/services/funcionarios.server');
+  const motoristaDoc = await getFuncionarioPorId(motoristaUid);
+  if (!motoristaDoc) {
     return { ok: false as const, error: 'Motorista selecionado não encontrado.' };
   }
-  const motoristaNome = (motoristaDoc.data() as { nome?: string })?.nome ?? '';
+  const motoristaNome = motoristaDoc.nome ?? '';
 
   // Resolve quem recebe (nome)
   let quemRecebeNome = '';
   if (tipoRecebedor === 'motorista' && quemRecebeUid) {
-    const receptorDoc = await adminDb.collection('funcionarios').doc(quemRecebeUid).get();
-    if (!receptorDoc.exists) {
+    const receptorDoc = await getFuncionarioPorId(quemRecebeUid);
+    if (!receptorDoc) {
       return { ok: false as const, error: 'Receptor do valor não encontrado.' };
     }
-    quemRecebeNome = (receptorDoc.data() as { nome?: string })?.nome ?? '';
+    quemRecebeNome = receptorDoc.nome ?? '';
   } else if (tipoRecebedor === 'seguradora') {
     quemRecebeNome = seguradoraNome;
   }

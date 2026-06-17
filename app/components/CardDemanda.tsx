@@ -1,20 +1,23 @@
-import { useDraggable } from "@dnd-kit/core"
+import { useDraggable } from "@dnd-kit/core";
+import type { Demanda } from "../utils/criarSemana";
 
-export default function CardDemanda({demanda}){
+interface CardDemandaProps {
+  demanda: Demanda;
+}
 
-  const {attributes, listeners, setNodeRef, transform} =
-    useDraggable({
-      id: demanda.id
-    })
+export default function CardDemanda({ demanda }: CardDemandaProps) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: demanda.id
+  });
 
   const style = {
     transform: transform
       ? `translate(${transform.x}px, ${transform.y}px)`
       : undefined,
-    cursor:"grab"
-  }
+    cursor: "grab"
+  };
 
-  return(
+  return (
     <div
       ref={setNodeRef}
       {...listeners}
@@ -23,9 +26,8 @@ export default function CardDemanda({demanda}){
       className="card-demanda mb-2"
     >
       <strong>{demanda.nome || "Sem nome"}</strong>
-
       <div className="mt-2 d-flex flex-wrap gap-1">
-        {demanda.funcionarios.map(f=>(
+        {demanda.funcionarios.map(f => (
           <span
             key={f.id}
             className="badge"
@@ -42,7 +44,6 @@ export default function CardDemanda({demanda}){
           </span>
         ))}
       </div>
-
     </div>
-  )
+  );
 }

@@ -41,9 +41,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   // Verifica propriedade do serviço antes de qualquer ação (evita IDOR)
-  const { adminDb } = await import('~/services/firebaseAdmin.server');
-  const doc = await adminDb.collection('servicos').doc(servicoId).get();
-  if (!doc.exists || doc.data()?.motoristaUid !== sessao.uid) {
+  const { getServicoPorId } = await import('~/services/servicos.server');
+  const servicoDoc = await getServicoPorId(servicoId);
+  if (!servicoDoc || servicoDoc.motoristaUid !== sessao.uid) {
     return { ok: false, error: 'Acesso negado.' };
   }
 
@@ -61,7 +61,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   if (intent === 'finalizar') {
-    if (!doc.data()?.fotosEnviadas) {
+    if (!servicoDoc.fotosEnviadas) {
       return { ok: false, error: 'Envie pelo menos 1 foto obrigatória antes de finalizar.' };
     }
     const { finalizarServico } = await import('~/services/servicos.server');
@@ -260,9 +260,19 @@ export default function Home() {
                         <div className="text-primary h3 m-0">
                           <i className="bi bi-geo-alt-fill"></i>
                         </div>
-                        <div>
+                        <div className="flex-grow-1">
                           <span className="text-secondary small fw-semibold uppercase d-block">Retirada (Busca)</span>
-                          <span className="text-light fw-bold">{servicoAtivo.pickUpAdress || <span className="text-secondary fst-italic">Não informado</span>}</span>
+                          <span className="text-light fw-bold d-block">{servicoAtivo.pickUpAdress || <span className="text-secondary fst-italic">Não informado</span>}</span>
+                          {servicoAtivo.pickUpAdress && (
+                            <div className="d-flex flex-wrap gap-2 mt-2">
+                              <a href={`https://waze.com/ul?q=${encodeURIComponent(servicoAtivo.pickUpAdress)}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-info rounded-pill px-3 d-flex align-items-center gap-1">
+                                <i className="bi bi-cursor-fill"></i> Waze
+                              </a>
+                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(servicoAtivo.pickUpAdress)}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-primary rounded-pill px-3 d-flex align-items-center gap-1">
+                                <i className="bi bi-map-fill"></i> Maps
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -272,9 +282,19 @@ export default function Home() {
                         <div className="text-success h3 m-0">
                           <i className="bi bi-flag-fill"></i>
                         </div>
-                        <div>
+                        <div className="flex-grow-1">
                           <span className="text-secondary small fw-semibold uppercase d-block">Entrega (Destino)</span>
-                          <span className="text-light fw-bold">{servicoAtivo.deliveryAdress || <span className="text-secondary fst-italic">Não informado</span>}</span>
+                          <span className="text-light fw-bold d-block">{servicoAtivo.deliveryAdress || <span className="text-secondary fst-italic">Não informado</span>}</span>
+                          {servicoAtivo.deliveryAdress && (
+                            <div className="d-flex flex-wrap gap-2 mt-2">
+                              <a href={`https://waze.com/ul?q=${encodeURIComponent(servicoAtivo.deliveryAdress)}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-info rounded-pill px-3 d-flex align-items-center gap-1">
+                                <i className="bi bi-cursor-fill"></i> Waze
+                              </a>
+                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(servicoAtivo.deliveryAdress)}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-primary rounded-pill px-3 d-flex align-items-center gap-1">
+                                <i className="bi bi-map-fill"></i> Maps
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

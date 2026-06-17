@@ -41,3 +41,27 @@ export const enviarNotificacaoServidor = async (
     console.log('[webpush] erro ao enviar notificação para uid:', uid, error);
   }
 };
+
+import { FieldValue } from 'firebase-admin/firestore';
+
+export const salvarSubscription = async (
+  uid: string,
+  displayName: string,
+  endpoint: string,
+  keys: { p256dh: string; auth: string }
+) => {
+  try {
+    await adminDb.collection('subscriptions').doc(uid).set({
+      uid,
+      displayName,
+      endpoint,
+      keys,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    console.log('[salvarSubscription] registrada para:', displayName);
+    return { ok: true };
+  } catch (error: any) {
+    console.log('[salvarSubscription] erro:', error);
+    return { ok: false, error };
+  }
+};

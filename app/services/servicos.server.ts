@@ -24,6 +24,7 @@ export interface Servico {
   seguradoraNome?: string;
   faturadoStatus?: 'pendente' | 'recebido'; // apenas quando tipoRecebedor === 'seguradora'
   faturadoRecebidoEm?: any;
+  cronNotificado?: boolean;
 }
 
 export const getServicos = async (): Promise<Servico[]> => {
@@ -39,6 +40,42 @@ export const getServicos = async (): Promise<Servico[]> => {
     console.error('[getServicos] erro:', error?.code ?? 'unknown');
   }
   return [];
+};
+
+export const getServicosAgendadosParaHoje = async (inicioDoDia: Date, fimDoDia: Date): Promise<Servico[]> => {
+  try {
+    const servicosSnap = await adminDb
+      .collection('servicos')
+      .where('createdAt', '>=', inicioDoDia)
+      .where('createdAt', '<=', fimDoDia)
+      .where('status', 'in', ['pendente', 'em_andamento'])
+      .get();
+    return servicosSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Servico[];
+  } catch (error: any) {
+    console.error('[getServicosAgendadosParaHoje] erro:', error?.code ?? 'unknown');
+    return [];
+  }
+};
+
+export const marcarServicoComoNotificadoCron = async (id: string) => {
+  try {
+    await adminDb.collection('servicos').doc(id).update({ cronNotificado: true });
+    return { ok: true };
+  } catch (error: any) {
+    console.error('[marcarServicoComoNotificadoCron] erro:', error?.code ?? 'unknown');
+    return { ok: false, error };
+  }
+};
+
+export const getServicoPorId = async (id: string): Promise<Servico | null> => {
+  try {
+    const snap = await adminDb.collection('servicos').doc(id).get();
+    if (!snap.exists) return null;
+    return { id: snap.id, ...snap.data() } as Servico;
+  } catch (error: any) {
+    console.error('[getServicoPorId] erro:', error?.code ?? 'unknown');
+    return null;
+  }
 };
 
 export const postNovoServico = async (

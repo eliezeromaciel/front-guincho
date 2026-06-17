@@ -1,8 +1,6 @@
-import { adminDb } from '~/services/firebaseAdmin.server';
 import { enviarNotificacaoServidor } from '~/services/webpush.server';
-import type { Route } from './+types/api.cron.notificar-diario';
-
-export const loader = async ({ request }: Route.LoaderArgs) => {
+import { getServicosAgendadosParaHoje, marcarServicoComoNotificadoCron } from '~/services/servicos.server';
+export const loader = async ({ request }: { request: Request }) => {
   // O Vercel envia um cabeçalho de autorização contendo a CRON_SECRET, se configurada.
   // Protege o endpoint para que não seja chamado livremente pela web.
   const authHeader = request.headers.get('authorization');
@@ -17,20 +15,14 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
     // Buscar todos os serviços pendentes agendados para hoje
-    const snapshot = await adminDb.collection('servicos')
-      .where('createdAt', '>=', startOfDay)
-      .where('createdAt', '<=', endOfDay)
-      .where('status', 'in', ['pendente', 'em_andamento'])
-      .get();
+    const servicosHoje = await getServicosAgendadosParaHoje(startOfDay, endOfDay);
 
-    if (snapshot.empty) {
+    if (servicosHoje.length === 0) {
       return new Response('Nenhum serviço pendente agendado para hoje.', { status: 200 });
     }
 
     let count = 0;
-    for (const doc of snapshot.docs) {
-      const servico = doc.data();
-
+    for (const servico of servicosHoje) {
       // Ignora se o motorista não estiver definido ou se já tivermos notificado através do cron
       if (!servico.motoristaUid || servico.cronNotificado) continue;
 
@@ -58,7 +50,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       );
 
       // Marca o serviço como notificado pelo cron para não reenviar caso a task rode novamente
-      await doc.ref.update({ cronNotificado: true });
+      if (servico.id) {
+        await marcarServicoComoNotificadoCron(servico.id);
+      }
       count++;
     }
 

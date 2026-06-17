@@ -1,0 +1,16 @@
+refactoração: migração para TypeScript e separação de responsabilidades (camada de dados)
+
+- chore/manutenção: migra componentes (.jsx/.js) 
+  para .tsx/.ts, adicionando tipagens estritas (interfaces e types) 
+  para garantir a segurança de tipos e conformidade com as diretrizes 
+  do projeto (CLAUDE.md).
+- refatoração: move consultas diretas ao Firestore (adminDb.collection) 
+  que estavam vazando para os arquivos de rotas (servicos.tsx, dashboard.tsx, 
+  home.tsx, api.cron.notificar-diario.ts e api.registrar-subscription.ts) 
+  para suas respectivas funções na camada de serviços (app/services).
+- mantém o uso do `await import(...)` nas rotas para carregar os services
+  dinamicamente, preservando a proteção existente contra vazamento do 
+  firebase-admin para o client bundle.
+
+A camada de rotas agora se comunica com o banco estritamente através 
+de funções de serviço exportadas, respeitando a arquitetura estabelecida.

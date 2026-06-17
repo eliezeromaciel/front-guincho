@@ -1,6 +1,4 @@
-import { adminDb } from '~/services/firebaseAdmin.server';
 import { requireAuth } from '~/services/session.server';
-import { FieldValue } from 'firebase-admin/firestore';
 
 export const loader = async () => new Response(null, { status: 405 });
 
@@ -32,14 +30,13 @@ export const action = async ({ request }: { request: Request }) => {
       return Response.json({ ok: false, error: 'Subscription inválida.' }, { status: 400 });
     }
 
-    await adminDb.collection('subscriptions').doc(sessao.uid).set({
-      uid: sessao.uid,
-      displayName: sessao.displayName,
-      endpoint,
-      keys,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-    console.log('[registrar-subscription] subscription registrada para:', sessao.displayName);
+    const { salvarSubscription } = await import('~/services/webpush.server');
+    const result = await salvarSubscription(sessao.uid, sessao.displayName, endpoint, keys);
+    
+    if (!result.ok) {
+      return Response.json({ ok: false, error: 'Erro ao salvar subscription no banco.' }, { status: 500 });
+    }
+
     return Response.json({ ok: true });
   } catch (error) {
     console.log('[registrar-subscription] erro:', error);

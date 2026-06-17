@@ -45,7 +45,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
       return { ok: false as const, error: 'Dados inválidos.' };
 
     const { updateServico } = await import('~/services/servicos.server');
-    const { adminDb } = await import('~/services/firebaseAdmin.server');
+    const { getFuncionarioPorId } = await import('~/services/funcionarios.server');
     const { Timestamp } = await import('firebase-admin/firestore');
 
     let camposUpdate: Record<string, any> = {};
@@ -61,8 +61,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
         camposUpdate.quemRecebeUid = '';
         camposUpdate.tipoRecebedor = 'nenhum';
       } else {
-        const receptorDoc = await adminDb.collection('funcionarios').doc(valor).get();
-        const receptorNome = (receptorDoc.data() as any)?.nome ?? valor;
+        const receptorDoc = await getFuncionarioPorId(valor);
+        const receptorNome = receptorDoc?.nome ?? valor;
         camposUpdate.receiver = receptorNome;
         camposUpdate.quemRecebeUid = valor;
         camposUpdate.tipoRecebedor = 'motorista';
@@ -72,8 +72,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
       camposUpdate.finalizedAt = Timestamp.fromDate(new Date(valor + 'T12:00:00'));
     } else if (campo === 'motoristaUid') {
       // Atualiza uid E busca o nome correspondente
-      const motoristaDoc = await adminDb.collection('funcionarios').doc(valor).get();
-      const motoristaNome = (motoristaDoc.data() as any)?.nome ?? valor;
+      const motoristaDoc = await getFuncionarioPorId(valor);
+      const motoristaNome = motoristaDoc?.nome ?? valor;
       camposUpdate.motoristaUid = valor;
       camposUpdate.motoristaNome = motoristaNome;
     } else {
