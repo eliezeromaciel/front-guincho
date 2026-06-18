@@ -28,9 +28,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
   // ── MARCAR FATURADO RECEBIDO ──────────────────────────────────────────────
   if (intent === 'marcar-recebido') {
     const servicoId = formData.get('servicoId') as string;
+    const dataRecebimento = formData.get('dataRecebimento') as string;
     if (!servicoId) return { ok: false as const, error: 'ID inválido.' };
     const { marcarFaturadoRecebido } = await import('~/services/servicos.server');
-    const result = await marcarFaturadoRecebido(servicoId);
+    const result = await marcarFaturadoRecebido(servicoId, dataRecebimento);
     if (!result.ok) return { ok: false as const, error: 'Erro ao marcar como recebido.' };
     return { ok: true as const };
   }
@@ -341,26 +342,26 @@ export default function Dashboard() {
       const fStatus = (s as any).faturadoStatus || 'pendente';
       const segNome = (s as any).seguradoraNome || s.receiver || 'Seguradora';
 
-      if (fStatus === 'pendente') {
-        // Previsão de recebimento: 30 dias após o serviço
-        const previsaoRecebimento = new Date(sDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-        if (previsaoRecebimento.getMonth() === mesSelecionado && previsaoRecebimento.getFullYear() === anoSelecionado) {
-          linhas.push({
-            date: previsaoRecebimento,
-            motorista: s.motoristaNome || '—',
-            motoristaUid: s.motoristaUid,
-            quemRecebe: `Faturado ${segNome}`,
-            descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
-            valor: s.valorCobrado,
-            tipo: 'faturado',
-            servicoId: s.id,
-            faturadoStatus: fStatus,
-            rawValorCobrado: s.valorCobrado,
-            rawDataISO: sDate.toISOString().substring(0, 10),
-            rawMotoristaUid: s.motoristaUid,
-          });
-        }
-      } else if (fStatus === 'recebido') {
+      // 1. Sempre insere a linha de execução no mês do serviço
+      if (sDate.getMonth() === mesSelecionado && sDate.getFullYear() === anoSelecionado) {
+        linhas.push({
+          date: sDate,
+          motorista: s.motoristaNome || '—',
+          motoristaUid: s.motoristaUid,
+          quemRecebe: `Faturado ${segNome}`,
+          descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
+          valor: s.valorCobrado,
+          tipo: 'faturado', // Não soma receita, mas entra na lista e nos guinchos
+          servicoId: s.id,
+          faturadoStatus: fStatus,
+          rawValorCobrado: s.valorCobrado,
+          rawDataISO: sDate.toISOString().substring(0, 10),
+          rawMotoristaUid: s.motoristaUid,
+        });
+      }
+
+      // 2. Se recebido, insere a linha financeira no mês de recebimento
+      if (fStatus === 'recebido') {
         const recebidoEm = getJsDate((s as any).faturadoRecebidoEm);
         if (recebidoEm && recebidoEm.getMonth() === mesSelecionado && recebidoEm.getFullYear() === anoSelecionado) {
           linhas.push({
@@ -434,16 +435,40 @@ export default function Dashboard() {
 
   const totalReceitas = linhas.filter((l) => l.tipo === 'receita' || l.tipo === 'faturado-recebido').reduce((s, l) => s + l.valor, 0);
   const totalDespesas = linhas.filter((l) => l.tipo === 'despesa').reduce((s, l) => s + Math.abs(l.valor), 0);
-  const totalFaturadosPendentes = linhas.filter((l) => l.tipo === 'faturado' && l.faturadoStatus === 'pendente').reduce((s, l) => s + l.valor, 0);
   const totalFaturadosRecebidos = linhas.filter((l) => l.tipo === 'faturado-recebido').reduce((s, l) => s + l.valor, 0);
   const saldoLiquido = totalReceitas - totalDespesas;
 
+  // Para os Faturados Pendentes (Card), lemos diretamente dos 'servicos' para capturar os que caem na previsão deste mês
+  let totalFaturadosPendentes = 0;
   const faturadosPorSeguradora: Record<string, { valor: number; itens: LinhaRelatorio[] }> = {};
-  linhas.filter((l) => l.tipo === 'faturado' && l.faturadoStatus === 'pendente').forEach((l) => {
-    const segNome = l.quemRecebe.replace('Faturado ', '');
-    if (!faturadosPorSeguradora[segNome]) faturadosPorSeguradora[segNome] = { valor: 0, itens: [] };
-    faturadosPorSeguradora[segNome].valor += l.valor;
-    faturadosPorSeguradora[segNome].itens.push(l);
+
+  servicos.forEach((s) => {
+    const tipo = (s as any).tipoRecebedor || 'motorista';
+    const fStatus = (s as any).faturadoStatus || 'pendente';
+    if (tipo === 'seguradora' && fStatus === 'pendente' && s.status !== 'cancelado') {
+      const sDate = getJsDate(s.finalizedAt || s.createdAt);
+      if (!sDate) return;
+      
+      const previsaoRecebimento = new Date(sDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (previsaoRecebimento.getMonth() === mesSelecionado && previsaoRecebimento.getFullYear() === anoSelecionado) {
+        const segNome = (s as any).seguradoraNome || s.receiver || 'Seguradora';
+        const valor = s.valorCobrado || 0;
+        
+        totalFaturadosPendentes += valor;
+        
+        if (!faturadosPorSeguradora[segNome]) faturadosPorSeguradora[segNome] = { valor: 0, itens: [] };
+        faturadosPorSeguradora[segNome].valor += valor;
+        faturadosPorSeguradora[segNome].itens.push({
+          date: sDate, // Data original do serviço
+          motorista: s.motoristaNome || '—',
+          quemRecebe: `Faturado ${segNome}`,
+          descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
+          valor: valor,
+          tipo: 'faturado',
+          servicoId: s.id,
+        });
+      }
+    }
   });
 
   const recebidosPorSeguradora: Record<string, number> = {};
@@ -892,15 +917,22 @@ export default function Dashboard() {
                             <small className="text-light ms-2">{item.descricao}</small>
                             <small className="text-secondary ms-1">({item.motorista})</small>
                           </div>
-                          <div className="d-flex align-items-center gap-2">
+                          <div className="d-flex flex-wrap align-items-center justify-content-end gap-2 mt-2 mt-sm-0">
                             <small className="text-warning font-mono fw-bold">{fmt(item.valor)}</small>
-                            <fetcher.Form method="post" className="d-inline">
+                            <fetcher.Form method="post" className="d-flex flex-wrap align-items-center gap-1">
                               <input type="hidden" name="intent" value="marcar-recebido" />
                               <input type="hidden" name="servicoId" value={item.servicoId} />
+                              <input 
+                                type="date" 
+                                name="dataRecebimento" 
+                                className="form-control form-control-sm text-light border-secondary" 
+                                style={{ width: '100px', fontSize: '0.65rem', padding: '0.1rem 0.2rem', background: 'hsl(220 16% 18%)', height: '24px' }}
+                                title="Data do recebimento (opcional)"
+                              />
                               <button
                                 type="submit"
-                                className="btn btn-outline-success btn-sm rounded-pill px-2 py-0"
-                                style={{ fontSize: '0.7rem' }}
+                                className="btn btn-outline-success btn-sm rounded-pill px-2 py-0 d-flex align-items-center gap-1"
+                                style={{ fontSize: '0.65rem', height: '24px' }}
                                 disabled={fetcher.state !== 'idle'}
                                 title="Marcar como recebido"
                               >

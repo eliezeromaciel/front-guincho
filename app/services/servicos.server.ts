@@ -224,11 +224,15 @@ export const cancelarServicoMotorista = async (servicoId: string) => {
   }
 };
 
-export const marcarFaturadoRecebido = async (servicoId: string) => {
+export const marcarFaturadoRecebido = async (servicoId: string, dataRecebimento?: string) => {
   try {
+    let faturadoRecebidoEm: any = FieldValue.serverTimestamp();
+    if (dataRecebimento) {
+      faturadoRecebidoEm = new Date(dataRecebimento + 'T12:00:00');
+    }
     await adminDb.collection('servicos').doc(servicoId).update({
       faturadoStatus: 'recebido',
-      faturadoRecebidoEm: FieldValue.serverTimestamp(),
+      faturadoRecebidoEm,
     });
     if (process.env.NODE_ENV === 'development') console.log('[marcarFaturadoRecebido] ok');
     return { ok: true as const };

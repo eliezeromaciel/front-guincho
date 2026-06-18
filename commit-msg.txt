@@ -1,16 +1,8 @@
-refactoração: migração para TypeScript e separação de responsabilidades (camada de dados)
+feat(painel-financeiro): separa execução de serviço e recebimento para faturados
 
-- chore/manutenção: migra componentes (.jsx/.js) 
-  para .tsx/.ts, adicionando tipagens estritas (interfaces e types) 
-  para garantir a segurança de tipos e conformidade com as diretrizes 
-  do projeto (CLAUDE.md).
-- refatoração: move consultas diretas ao Firestore (adminDb.collection) 
-  que estavam vazando para os arquivos de rotas (servicos.tsx, dashboard.tsx, 
-  home.tsx, api.cron.notificar-diario.ts e api.registrar-subscription.ts) 
-  para suas respectivas funções na camada de serviços (app/services).
-- mantém o uso do `await import(...)` nas rotas para carregar os services
-  dinamicamente, preservando a proteção existente contra vazamento do 
-  firebase-admin para o client bundle.
-
-A camada de rotas agora se comunica com o banco estritamente através 
-de funções de serviço exportadas, respeitando a arquitetura estabelecida.
+- Refatora a lógica de lançamentos de seguradoras no dashboard financeiro: 
+a linha de execução é sempre fixada no mês em que ocorreu (contabiliza na quantidade de guinchos, sem somar receita).
+- Adiciona a linha financeira (que soma receita) na tabela no mês de recebimento apenas quando o valor é efetivamente recebido.
+- Ajusta o card 'Faturados / A Receber' e a exportação em Excel para lerem as faturas pendentes baseando-se na data prevista, de forma independente da tabela.
+- Adiciona um campo de data opcional na confirmação de recebimento do card, permitindo definir o dia exato do recebimento da fatura.
+- Ajusta responsividade do card de faturados (flex-wrap e redução de input) para evitar quebra de layout em dispositivos móveis.

@@ -155,6 +155,21 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const faturadosPorSeg: Record<string, number> = {};
   const recebidosPorSeg: Record<string, number> = {};
 
+  // Calcula faturados pendentes verificando a previsão de recebimento, igual no dashboard
+  servicos.forEach((s) => {
+    const tipo = (s as any).tipoRecebedor || 'motorista';
+    const fStatus = (s as any).faturadoStatus || 'pendente';
+    if (tipo === 'seguradora' && fStatus === 'pendente' && s.status !== 'cancelado') {
+      const sDate = getJsDate(s.finalizedAt || s.createdAt);
+      if (!sDate) return;
+      const previsaoRecebimento = new Date(sDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (previsaoRecebimento.getMonth() === mes && previsaoRecebimento.getFullYear() === ano) {
+        const segNome = (s as any).seguradoraNome || s.receiver || 'Seguradora';
+        faturadosPorSeg[segNome] = (faturadosPorSeg[segNome] || 0) + (s.valorCobrado || 0);
+      }
+    }
+  });
+
   linhas.forEach((l) => {
     if (l.tipo === 'receita') {
       receitasPorMotorista[l.motorista] = (receitasPorMotorista[l.motorista] || 0) + l.valor;
@@ -162,10 +177,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     if (l.tipo === 'despesa') {
       const cam = l.quemRecebe.replace(' SA', '');
       despesasPorCaminhao[cam] = (despesasPorCaminhao[cam] || 0) + Math.abs(l.valor);
-    }
-    if (l.tipo === 'faturado') {
-      const seg = l.quemRecebe.replace('Faturado ', '');
-      faturadosPorSeg[seg] = (faturadosPorSeg[seg] || 0) + l.valor;
     }
     if (l.tipo === 'faturado-recebido') {
       const seg = l.quemRecebe.replace('Fat Recebida ', '');
@@ -454,8 +465,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       cellH.numFmt = '#,##0;[Red]-#,##0';
 
       if (idx < faturadosArray.length) {
-        cellG.value = `Faturado ${faturadosArray[idx]}`;
-        cellH.value = { formula: `=SUMIF($C:$C, G${r}, $E:$E)` };
+        const segName = faturadosArray[idx];
+        cellG.value = `Faturado ${segName}`;
+        cellH.value = faturadosPorSeg[segName]; // Valor calculado do backend, pois os serviços estão no mês anterior
       } else {
         cellG.value = '';
         cellH.value = '';
