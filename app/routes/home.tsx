@@ -236,6 +236,18 @@ export default function Home() {
                     </div>
                   </Link>
                 </div>
+
+                <div className="col-12 col-sm-6 col-md-4 gf-animate-in-up">
+                  <Link to="/relatoriodespesas" className="card-link">
+                    <div className="gf-card hover-glow hover-scale text-center h-100" style={{ background: 'hsl(220 16% 13%)' }}>
+                      <div className="text-info mb-3">
+                        <i className="bi bi-pie-chart display-4"></i>
+                      </div>
+                      <h3 className="h5 fw-bold text-white mb-2">Relatórios de Despesas</h3>
+                      <p className="text-secondary small mb-0">Detalhamento de gastos por blocos e caminhões.</p>
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
           )}

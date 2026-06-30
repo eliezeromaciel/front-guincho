@@ -1,0 +1,9 @@
+implementa melhorias em cadastro de despesas, vinculando centros de custos com categorias de despesas.
+
+- Implementa função 'getCentrosCustoHibridos' na camada de serviço para injetar automaticamente os veículos e todos os funcionários e admins na listagem de centros de custo (por ids), sem sujar a base oficial. (single source of truth)
+- Bloqueia a edição de nome e a exclusão de itens híbridos (veículos e funcionários) no modal de gerenciamento, (protegendo as tabelas originais), mas mantendo a funcionalidade de vínculo liberada.
+- Substitui a seleção múltipla nativa por um novo componente customizado 'MobileMultiSelect' (dropdown elegante com checkboxes) para gerenciar vínculos, otimizando drasticamente a usabilidade em dispositivos móveis.
+- Adiciona validação de duplicidade (nome único) no backend ao criar ou editar categorias e centros de custo manuais, prevenindo cadastros repetidos.
+- Corrige bug de renderização (React keys) no formulário de edição de categorias, garantindo que os dados sejam populados corretamente ao clicar em 'Editar'.
+- Simplifica a interface de criação de centro de custo removendo um input chamado 'Tipo'.
+- Ajusta a action de salvamento para realizar a gravação exclusivamente dos vínculos nas categorias quando o usuário administra um item híbrido.

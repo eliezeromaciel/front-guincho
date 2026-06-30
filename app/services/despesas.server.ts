@@ -3,7 +3,9 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export interface Despesa {
   id?: string;
-  caminhao: 'A' | 'B' | 'C';
+  caminhao?: 'A' | 'B' | 'C'; // Mantido para retrocompatibilidade
+  centroCustoId?: string;
+  categoriaId?: string;
   valorTotal: number;
   descricao: string;
   dataPagamento: string; // no formato 'YYYY-MM-DD'
@@ -20,6 +22,8 @@ export const getDespesas = async (): Promise<Despesa[]> => {
       return {
         id: doc.id,
         caminhao: data.caminhao,
+        centroCustoId: data.centroCustoId,
+        categoriaId: data.categoriaId,
         valorTotal: data.valorTotal,
         descricao: data.descricao,
         dataPagamento: data.dataPagamento,
@@ -36,23 +40,34 @@ export const getDespesas = async (): Promise<Despesa[]> => {
 };
 
 export const postNovaDespesa = async (
-  caminhao: 'A' | 'B' | 'C',
-  valorTotal: number,
-  descricao: string,
-  dataPagamento: string,
-  parcelas: number,
+  despesaData: {
+    caminhao?: 'A' | 'B' | 'C';
+    centroCustoId?: string;
+    categoriaId?: string;
+    valorTotal: number;
+    descricao: string;
+    dataPagamento: string;
+    parcelas: number;
+  }
 ) => {
   try {
-    const valorParcela = Number((valorTotal / parcelas).toFixed(2));
-    const docRef = await adminDb.collection('despesas').add({
-      caminhao,
-      valorTotal,
-      descricao,
-      dataPagamento,
-      parcelas,
+    const valorParcela = Number((despesaData.valorTotal / despesaData.parcelas).toFixed(2));
+    
+    // Constrói o objeto apenas com campos definidos
+    const payload: any = {
+      valorTotal: despesaData.valorTotal,
+      descricao: despesaData.descricao,
+      dataPagamento: despesaData.dataPagamento,
+      parcelas: despesaData.parcelas,
       valorParcela,
       createdAt: FieldValue.serverTimestamp(),
-    });
+    };
+
+    if (despesaData.caminhao) payload.caminhao = despesaData.caminhao;
+    if (despesaData.centroCustoId) payload.centroCustoId = despesaData.centroCustoId;
+    if (despesaData.categoriaId) payload.categoriaId = despesaData.categoriaId;
+
+    const docRef = await adminDb.collection('despesas').add(payload);
     if (process.env.NODE_ENV === 'development') console.log('[postNovaDespesa] result: ok');
     return { ok: true, docRef };
   } catch (error: any) {
