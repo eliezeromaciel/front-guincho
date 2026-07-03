@@ -230,3 +230,15 @@ This app is primarily used on mobile devices. Every UI change must be designed a
 - Prefer named exports over default exports for components and utilities.
 - Use `const` and arrow functions for component definitions: `const MyComponent = () => { ... }`.
 - Portuguese is the language of the UI and variable/function names in domain logic (e.g. `cliente`, `veiculo`, `demanda`). Internal React/TypeScript code follows English conventions (hooks, handlers, utilities).
+
+### Spec-Driven Development & TDD
+
+- The project strictly follows a **Spec-Driven Development** (SDD) and **Test-Driven Development** (TDD) workflow.
+- **Never** write or modify production code without first writing a unit test that validates the specification.
+- Steps to follow for any new feature or fix:
+  1. Define the specification (scope and rules).
+  2. Write a failing unit test (`.test.tsx` or `.test.ts`) using Vitest and React Testing Library.
+  3. Run the test to ensure it fails.
+  4. Implement the production code to make the test pass.
+  5. Refactor as needed while keeping tests green.
+- All new components, utilities, and services must have accompanying tests.
