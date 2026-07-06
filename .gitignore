@@ -35,3 +35,6 @@ npm-debug.log*
 # Arquivos temporários
 *.tmp
 *.temp
+
+# Planos de implementação (nunca commitar)
+/planos-implementacoes/
