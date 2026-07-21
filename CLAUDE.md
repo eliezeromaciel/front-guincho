@@ -11,7 +11,10 @@ npm run start        # Serve production build via react-router-serve
 npm run typecheck    # Generate React Router types + TypeScript check
 ```
 
-No test runner is configured.
+npm run test         # Run TypeScript check + Vitest tests
+
+## Guidelines for Validation
+- Always run `npm run test` before declaring any task complete. This command performs both the static TypeScript check (`typecheck`) and executes the unit/route tests.
 
 ## Architecture
 

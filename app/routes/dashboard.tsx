@@ -5,19 +5,27 @@ import { getServicos } from '~/services/servicos.server';
 import { getDespesas } from '~/services/despesas.server';
 import { getFuncionarios } from '~/services/funcionarios.server';
 import { getSeguradorasAtivas } from '~/services/seguradoras.server';
+import { getReceitas } from '~/services/receitas.server';
+import { getCategoriasReceita } from '~/services/categoriasReceita.server';
+import { getCategorias } from '~/services/categorias.server';
+import { getCentrosCustoHibridos } from '~/services/centrosCusto.server';
 import type { Route } from './+types/dashboard';
 
 export const meta = () => [{ title: 'Painel Financeiro — GuinchoFácil' }];
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   await requireAdmin(request);
-  const [servicos, despesas, funcionarios, seguradoras] = await Promise.all([
+  const [servicos, despesas, funcionarios, seguradoras, receitas, categoriasReceita, categoriasDespesa, centrosCusto] = await Promise.all([
     getServicos(),
     getDespesas(),
     getFuncionarios(),
     getSeguradorasAtivas(),
+    getReceitas(),
+    getCategoriasReceita(),
+    getCategorias(),
+    getCentrosCustoHibridos(),
   ]);
-  return { servicos, despesas, funcionarios, seguradoras };
+  return { servicos, despesas, funcionarios, seguradoras, receitas, categoriasReceita, categoriasDespesa, centrosCusto };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -111,7 +119,18 @@ export const action = async ({ request }: Route.ActionArgs) => {
     if (campo === 'valorTotal') valorConvertido = parseFloat(valor);
     if (campo === 'parcelas') valorConvertido = parseInt(valor, 10);
 
-    const result = await updateDespesa(despesaId, { [campo]: valorConvertido } as any);
+    const camposUpdate: Record<string, any> = { [campo]: valorConvertido };
+
+    if (campo === 'categoriaId') {
+      const { getCategorias } = await import('~/services/categorias.server');
+      const categorias = await getCategorias();
+      const cat = categorias.find(c => c.id === valor);
+      if (cat) {
+        camposUpdate.descricao = cat.nome;
+      }
+    }
+
+    const result = await updateDespesa(despesaId, camposUpdate as any);
     if (!result.ok) return { ok: false as const, error: 'Erro ao atualizar despesa.' };
     return { ok: true as const };
   }
@@ -123,6 +142,16 @@ export const action = async ({ request }: Route.ActionArgs) => {
     const { deleteDespesa } = await import('~/services/despesas.server');
     const result = await deleteDespesa(despesaId);
     if (!result.ok) return { ok: false as const, error: 'Erro ao excluir despesa.' };
+    return { ok: true as const };
+  }
+
+  // ── EXCLUIR RECEITA ───────────────────────────────────────────────────────
+  if (intent === 'delete-receita') {
+    const receitaId = formData.get('receitaId') as string;
+    if (!receitaId) return { ok: false as const, error: 'ID inválido.' };
+    const { deleteReceita } = await import('~/services/receitas.server');
+    const result = await deleteReceita(receitaId);
+    if (!result.ok) return { ok: false as const, error: 'Erro ao excluir receita.' };
     return { ok: true as const };
   }
 
@@ -164,17 +193,22 @@ type LinhaRelatorio = {
   tipo: 'receita' | 'despesa' | 'faturado' | 'faturado-recebido' | 'cancelado';
   servicoId?: string;
   despesaId?: string;
+  receitaId?: string;
   faturadoStatus?: string;
   rawValorCobrado?: number;
   rawDataISO?: string;
   rawMotoristaUid?: string;
   rawQuemRecebeUid?: string;
   rawCaminhao?: string;
+  rawCentroCustoId?: string;
+  rawCategoriaId?: string;
+  categoriaCor?: string;
+  categoriaNome?: string;
 };
 
 type DeleteTarget = {
   id: string;
-  tipo: 'servico' | 'despesa';
+  tipo: 'servico' | 'despesa' | 'receita';
   descricao: string;
   valor: number;
 };
@@ -205,7 +239,7 @@ const inlineSelectStyle: React.CSSProperties = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { servicos, despesas, funcionarios, seguradoras } = useLoaderData<typeof loader>();
+  const { servicos, despesas, funcionarios, seguradoras, receitas, categoriasReceita, categoriasDespesa, centrosCusto } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
 
   const hoje = new Date();
@@ -295,6 +329,9 @@ export default function Dashboard() {
     if (deleteTarget.tipo === 'servico') {
       fd.append('intent', 'delete-servico');
       fd.append('servicoId', deleteTarget.id);
+    } else if (deleteTarget.tipo === 'receita') {
+      fd.append('intent', 'delete-receita');
+      fd.append('receitaId', deleteTarget.id);
     } else {
       fd.append('intent', 'delete-despesa');
       fd.append('despesaId', deleteTarget.id);
@@ -312,6 +349,9 @@ export default function Dashboard() {
   // ── MONTAR LINHAS ──────────────────────────────────────────────────────────
 
   const linhas: LinhaRelatorio[] = [];
+
+  const fatSegCategoria = categoriasReceita.find(c => c.isSystem && c.nome.toLowerCase() === 'fatura de seguradora');
+  const fatSegCor = fatSegCategoria?.cor || '#16a34a';
 
   servicos.forEach((s) => {
     const sDate = getJsDate(s.finalizedAt || s.createdAt);
@@ -333,6 +373,8 @@ export default function Dashboard() {
           rawDataISO: sDate.toISOString().substring(0, 10),
           rawMotoristaUid: s.motoristaUid,
           rawQuemRecebeUid: s.quemRecebeUid ?? '',
+          categoriaCor: '#2563eb',
+          categoriaNome: 'Serviço de Guincho',
         });
       }
       return;
@@ -351,12 +393,14 @@ export default function Dashboard() {
           quemRecebe: `Faturado ${segNome}`,
           descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
           valor: s.valorCobrado,
-          tipo: 'faturado', // Não soma receita, mas entra na lista e nos guinchos
+          tipo: 'faturado',
           servicoId: s.id,
           faturadoStatus: fStatus,
           rawValorCobrado: s.valorCobrado,
           rawDataISO: sDate.toISOString().substring(0, 10),
           rawMotoristaUid: s.motoristaUid,
+          categoriaCor: fatSegCor,
+          categoriaNome: 'Fatura de Seguradora',
         });
       }
 
@@ -371,7 +415,8 @@ export default function Dashboard() {
             descricao: `Pgto fatura — ${s.detalhesVeiculo || s.placaVeiculo || 'Serviço'}`,
             valor: s.valorCobrado,
             tipo: 'faturado-recebido',
-            // faturado-recebido é apenas visualização — sem edição
+            categoriaCor: fatSegCor,
+            categoriaNome: 'Fatura de Seguradora',
           });
         }
       }
@@ -390,8 +435,30 @@ export default function Dashboard() {
           rawDataISO: sDate.toISOString().substring(0, 10),
           rawMotoristaUid: s.motoristaUid,
           rawQuemRecebeUid: s.quemRecebeUid ?? '',
+          categoriaCor: '#2563eb',
+          categoriaNome: 'Serviço de Guincho',
         });
       }
+    }
+  });
+
+  // Mapeia lançamentos da coleção de receitas manuais
+  receitas.forEach((r) => {
+    const rDate = new Date(r.dataRecebimento + 'T12:00:00');
+    if (rDate.getMonth() === mesSelecionado && rDate.getFullYear() === anoSelecionado) {
+      const catColor = categoriasReceita.find(c => c.id === r.categoriaReceitaId)?.cor || '#10b981';
+      linhas.push({
+        date: rDate,
+        motorista: '—',
+        quemRecebe: r.quemRecebeu,
+        descricao: r.seguradoraNome ? `${r.categoriaReceitaNome} — ${r.seguradoraNome}` : r.categoriaReceitaNome,
+        valor: r.valor,
+        tipo: 'receita',
+        receitaId: r.id,
+        categoriaCor: catColor,
+        categoriaNome: r.categoriaReceitaNome,
+        rawDataISO: r.dataRecebimento,
+      });
     }
   });
 
@@ -401,16 +468,26 @@ export default function Dashboard() {
       const dParcela = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
       if (dParcela.getMonth() === mesSelecionado && dParcela.getFullYear() === anoSelecionado) {
         const parcInfo = d.parcelas > 1 ? ` (${i + 1}/${d.parcelas})` : '';
+        const cc = centrosCusto.find(c => c.id === d.centroCustoId);
+        const quemRecebeNome = cc ? cc.nome : (d.caminhao ? `Caminhão ${d.caminhao}` : '—');
+        const cat = categoriasDespesa.find(c => c.id === d.categoriaId);
+        const catCor = cat?.cor || '#ef4444';
+        const catNome = cat?.nome || 'Despesa';
+
         linhas.push({
           date: dParcela,
           motorista: '—',
-          quemRecebe: `${caminhaoNomeMap[d.caminhao] || d.caminhao} SA`,
+          quemRecebe: quemRecebeNome,
           descricao: `${d.descricao}${parcInfo}`,
           valor: -d.valorParcela,
           tipo: 'despesa',
           despesaId: d.id,
           rawDataISO: d.dataPagamento,
           rawCaminhao: d.caminhao,
+          rawCentroCustoId: d.centroCustoId,
+          rawCategoriaId: d.categoriaId,
+          categoriaCor: catCor,
+          categoriaNome: catNome,
         });
       }
     }
@@ -500,7 +577,21 @@ export default function Dashboard() {
             <h1 className="h2 fw-bold text-white mb-0">Relatórios Financeiros</h1>
             <p className="text-secondary small mb-0">Toque em qualquer célula para editar • 🗑️ para excluir</p>
           </div>
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex flex-wrap align-items-center gap-2">
+            <Link
+              to="/nova-receita"
+              className="btn btn-outline-success rounded-pill px-3 fw-bold d-flex align-items-center justify-content-center gap-1"
+              style={{ height: 44, fontSize: '0.85rem' }}
+            >
+              <i className="bi bi-plus-circle" /> NOVA RECEITA
+            </Link>
+            <Link
+              to="/despesas"
+              className="btn btn-outline-danger rounded-pill px-3 fw-bold d-flex align-items-center justify-content-center gap-1"
+              style={{ height: 44, fontSize: '0.85rem' }}
+            >
+              <i className="bi bi-dash-circle" /> NOVA DESPESA
+            </Link>
             <button onClick={() => navegarMes(-1)} className="btn btn-dark rounded-circle border border-secondary d-flex align-items-center justify-content-center" style={{ width: 44, height: 44 }}>
               <i className="bi bi-chevron-left" />
             </button>
@@ -613,8 +704,9 @@ export default function Dashboard() {
                       ? `d-${l.despesaId}-${idx}`
                       : `r-${idx}`;
 
-                    // Apenas linhas com id de serviço ou despesa são editáveis
+                    // Apenas linhas com id de serviço ou despesa são editáveis inline
                     const isEditable = !!(l.servicoId || l.despesaId);
+                    const isDeletable = !!(l.servicoId || l.despesaId || l.receitaId);
 
                     let rowStyle: React.CSSProperties = {};
                     let valorClass = '';
@@ -724,23 +816,30 @@ export default function Dashboard() {
                         >
                           {l.tipo === 'despesa' ? (
                             // Despesa: seleciona caminhão
-                            isCellActive(rowKey, 'caminhao') ? (
+                            isCellActive(rowKey, 'centroCustoId') ? (
                               <select
                                 ref={selectRef}
                                 value={editingValue}
                                 style={inlineSelectStyle}
                                 onChange={(e) => setEditingValue(e.target.value)}
-                                onBlur={() => commitEdit(l, 'caminhao')}
-                                onKeyDown={(e) => handleKeyDown(e, l, 'caminhao')}
+                                onBlur={() => commitEdit(l, 'centroCustoId')}
+                                onKeyDown={(e) => handleKeyDown(e, l, 'centroCustoId')}
                               >
-                                <option value="A">Caminhão A</option>
-                                <option value="B">Caminhão B</option>
-                                <option value="C">Caminhão C</option>
+                                <option value="">— Selecione —</option>
+                                {(() => {
+                                  const despesaCat = categoriasDespesa.find(c => c.id === l.rawCategoriaId);
+                                  const centrosPermitidos = despesaCat 
+                                    ? centrosCusto.filter(cc => despesaCat.centrosCustoIds?.includes(cc.id!))
+                                    : centrosCusto;
+                                  return centrosPermitidos.map(cc => (
+                                    <option key={cc.id} value={cc.id}>{cc.nome}</option>
+                                  ));
+                                })()}
                               </select>
                             ) : (
                               <span
                                 className="small text-danger"
-                                onClick={() => isEditable && activateEdit(rowKey, 'caminhao', l.rawCaminhao ?? '')}
+                                onClick={() => isEditable && activateEdit(rowKey, 'centroCustoId', l.rawCentroCustoId ?? '')}
                               >
                                 <i className="bi bi-dash-circle text-danger me-1" style={{ fontSize: '0.75rem' }} />
                                 {l.quemRecebe}
@@ -780,25 +879,74 @@ export default function Dashboard() {
                           )}
                         </td>
 
-                        {/* ── DESCRIÇÃO ─────────────────────────────────── */}
+                        {/* ── DESCRIÇÃO / CATEGORIA ─────────────────────── */}
                         <td className="py-1 py-lg-2 px-1 px-lg-2 d-none d-lg-table-cell" style={editableTd(isEditable)}>
-                          {isCellActive(rowKey, 'descricao') ? (
-                            <input
-                              ref={inputRef}
-                              type="text"
-                              value={editingValue}
-                              style={inlineInputStyle}
-                              onChange={(e) => setEditingValue(e.target.value)}
-                              onBlur={() => commitEdit(l, l.servicoId ? 'detalhesVeiculo' : 'descricao')}
-                              onKeyDown={(e) => handleKeyDown(e, l, l.servicoId ? 'detalhesVeiculo' : 'descricao')}
-                            />
+                          {l.despesaId ? (
+                            isCellActive(rowKey, 'categoriaId') ? (
+                              <select
+                                ref={selectRef}
+                                value={editingValue}
+                                style={inlineSelectStyle}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onBlur={() => commitEdit(l, 'categoriaId')}
+                                onKeyDown={(e) => handleKeyDown(e, l, 'categoriaId')}
+                              >
+                                <option value="">— Selecione —</option>
+                                {(() => {
+                                  const ccId = l.rawCentroCustoId;
+                                  const categoriasPermitidas = ccId
+                                    ? categoriasDespesa.filter(cat => cat.centrosCustoIds?.includes(ccId))
+                                    : categoriasDespesa;
+                                  return categoriasPermitidas.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                                  ));
+                                })()}
+                              </select>
+                            ) : (
+                              <div className="d-flex align-items-center gap-2">
+                                {l.categoriaCor && (
+                                  <span 
+                                    className="rounded-circle d-inline-block flex-shrink-0" 
+                                    style={{ width: '8px', height: '8px', background: l.categoriaCor }}
+                                    title={l.categoriaNome || 'Categoria'}
+                                  />
+                                )}
+                                <span
+                                  className="small text-light"
+                                  onClick={() => isEditable && activateEdit(rowKey, 'categoriaId', l.rawCategoriaId ?? '')}
+                                >
+                                  {l.descricao}
+                                </span>
+                              </div>
+                            )
                           ) : (
-                            <span
-                              className="small text-light"
-                              onClick={() => isEditable && activateEdit(rowKey, 'descricao', l.descricao)}
-                            >
-                              {l.descricao}
-                            </span>
+                            isCellActive(rowKey, 'descricao') ? (
+                              <input
+                                ref={inputRef}
+                                type="text"
+                                value={editingValue}
+                                style={inlineInputStyle}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onBlur={() => commitEdit(l, l.servicoId ? 'detalhesVeiculo' : 'descricao')}
+                                onKeyDown={(e) => handleKeyDown(e, l, l.servicoId ? 'detalhesVeiculo' : 'descricao')}
+                              />
+                            ) : (
+                              <div className="d-flex align-items-center gap-2">
+                                {l.categoriaCor && (
+                                  <span 
+                                    className="rounded-circle d-inline-block flex-shrink-0" 
+                                    style={{ width: '8px', height: '8px', background: l.categoriaCor }}
+                                    title={l.categoriaNome || 'Categoria'}
+                                  />
+                                )}
+                                <span
+                                  className="small text-light"
+                                  onClick={() => isEditable && activateEdit(rowKey, 'descricao', l.descricao)}
+                                >
+                                  {l.descricao}
+                                </span>
+                              </div>
+                            )
                           )}
                         </td>
 
@@ -828,7 +976,7 @@ export default function Dashboard() {
 
                         {/* ── EXCLUIR / EDITAR ───────────────────────────────────── */}
                         <td className="py-1 py-lg-2 px-1 px-lg-2 text-center">
-                          {isEditable && (
+                          {isDeletable && (
                             <>
                               <button
                                 className="btn btn-link p-0 d-none d-lg-inline-block"
@@ -836,8 +984,8 @@ export default function Dashboard() {
                                 title="Excluir lançamento"
                                 onClick={() =>
                                   setDeleteTarget({
-                                    id: (l.servicoId ?? l.despesaId) as string,
-                                    tipo: l.servicoId ? 'servico' : 'despesa',
+                                    id: (l.servicoId ?? l.despesaId ?? l.receitaId) as string,
+                                    tipo: l.servicoId ? 'servico' : l.receitaId ? 'receita' : 'despesa',
                                     descricao: l.descricao,
                                     valor: Math.abs(l.valor),
                                   })
@@ -845,14 +993,16 @@ export default function Dashboard() {
                               >
                                 <i className="bi bi-trash3" style={{ fontSize: '0.95rem' }} />
                               </button>
-                              <button
-                                className="btn btn-link p-0 d-inline-block d-lg-none"
-                                style={{ color: 'hsl(217 91% 60%)', opacity: 0.8 }}
-                                title="Editar lançamento"
-                                onClick={() => setMobileEditingRow(l)}
-                              >
-                                <i className="bi bi-pencil-square" style={{ fontSize: '1.2rem' }} />
-                              </button>
+                              {isEditable && (
+                                <button
+                                  className="btn btn-link p-0 d-inline-block d-lg-none"
+                                  style={{ color: 'hsl(217 91% 60%)', opacity: 0.8 }}
+                                  title="Editar lançamento"
+                                  onClick={() => setMobileEditingRow(l)}
+                                >
+                                  <i className="bi bi-pencil-square" style={{ fontSize: '1.2rem' }} />
+                                </button>
+                              )}
                             </>
                           )}
                         </td>
