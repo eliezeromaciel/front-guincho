@@ -57,3 +57,26 @@ export const adminAuth = {
   getUser: vi.fn(),
   revokeRefreshTokens: vi.fn(),
 };
+
+// Mock global do firebase-admin
+vi.mock('firebase-admin/app', () => ({
+  initializeApp: vi.fn(),
+  getApps: vi.fn(() => []),
+  cert: vi.fn(),
+}));
+
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore: vi.fn(() => adminDb),
+  FieldValue: {
+    serverTimestamp: vi.fn(() => 'server-timestamp'),
+  },
+}));
+
+vi.mock('firebase-admin/auth', () => ({
+  getAuth: vi.fn(() => adminAuth),
+}));
+
+// Mock do requireAdmin para testes de rota
+vi.mock('~/services/session.server', () => ({
+  requireAdmin: vi.fn(async () => ({ uid: 'admin-1', email: 'admin@test.com' })),
+}));

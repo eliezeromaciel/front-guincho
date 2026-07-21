@@ -5,8 +5,16 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    environment: 'happy-dom',
+    environment: 'node',
     setupFiles: ['./test/setup.ts'],
-    include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
-  },
+    server: {
+      deps: {
+        inline: [
+          '@opentelemetry/api',
+          '@google-cloud/firestore',
+          'firebase-admin'
+        ]
+      }
+    }
+  }
 });

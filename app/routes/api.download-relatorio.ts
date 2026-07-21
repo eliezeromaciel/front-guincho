@@ -138,7 +138,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         linhas.push({
           date: dParcela,
           motorista: '—',
-          quemRecebe: `${caminhaoNomeMap[d.caminhao] || d.caminhao} SA`,
+          quemRecebe: `${(d.caminhao && caminhaoNomeMap[d.caminhao]) || d.caminhao || '—'} SA`,
           descricao: `${d.descricao}${parcInfo}`,
           valor: -d.valorParcela,
           tipo: 'despesa',

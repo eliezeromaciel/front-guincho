@@ -8,7 +8,7 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "db:seed": "node scripts/db-seed.js",
-    "test": "vitest"
+    "test": "npm run typecheck && vitest"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
