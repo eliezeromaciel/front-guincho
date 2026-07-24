@@ -10,6 +10,7 @@ export default [
     route('/novousuario', 'routes/cadastro-usuario.tsx'),
     route('/cadastros', 'routes/cadastros.tsx'),
     route('/despesas', 'routes/despesas.tsx'),
+    route('/nova-receita', 'routes/nova-receita.tsx'),
     route('/relatoriosfinanceiros', 'routes/dashboard.tsx'),
     route('/relatoriodespesas', 'routes/relatorio-despesas.tsx'),
     route('/seguradoras', 'routes/seguradoras.tsx'),
