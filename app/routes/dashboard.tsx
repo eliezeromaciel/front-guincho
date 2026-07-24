@@ -515,28 +515,36 @@ export default function Dashboard() {
   const totalFaturadosRecebidos = linhas.filter((l) => l.tipo === 'faturado-recebido').reduce((s, l) => s + l.valor, 0);
   const saldoLiquido = totalReceitas - totalDespesas;
 
-  // Para os Faturados Pendentes (Card), lemos diretamente dos 'servicos' para capturar os que caem na previsão deste mês
-  let totalFaturadosPendentes = 0;
-  const faturadosPorSeguradora: Record<string, { valor: number; itens: LinhaRelatorio[] }> = {};
+  // ── CONFRONTO DE FATURADOS POR SEGURADORA ──────────────────────────────────
+  let mesAnterior = mesSelecionado - 1;
+  let anoAnterior = anoSelecionado;
+  if (mesAnterior < 0) {
+    mesAnterior = 11;
+    anoAnterior--;
+  }
 
+  const confrontoSeguradoras: Record<
+    string,
+    { totalServicos: number; totalRecebido: number; diferenca: number; itens: LinhaRelatorio[] }
+  > = {};
+
+  // 1. Agrupa serviços de seguradoras prestados no MÊS ANTERIOR
   servicos.forEach((s) => {
     const tipo = (s as any).tipoRecebedor || 'motorista';
-    const fStatus = (s as any).faturadoStatus || 'pendente';
-    if (tipo === 'seguradora' && fStatus === 'pendente' && s.status !== 'cancelado') {
+    if (tipo === 'seguradora' && s.status !== 'cancelado') {
       const sDate = getJsDate(s.finalizedAt || s.createdAt);
       if (!sDate) return;
-      
-      const previsaoRecebimento = new Date(sDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (previsaoRecebimento.getMonth() === mesSelecionado && previsaoRecebimento.getFullYear() === anoSelecionado) {
+
+      if (sDate.getMonth() === mesAnterior && sDate.getFullYear() === anoAnterior) {
         const segNome = (s as any).seguradoraNome || s.receiver || 'Seguradora';
         const valor = s.valorCobrado || 0;
-        
-        totalFaturadosPendentes += valor;
-        
-        if (!faturadosPorSeguradora[segNome]) faturadosPorSeguradora[segNome] = { valor: 0, itens: [] };
-        faturadosPorSeguradora[segNome].valor += valor;
-        faturadosPorSeguradora[segNome].itens.push({
-          date: sDate, // Data original do serviço
+
+        if (!confrontoSeguradoras[segNome]) {
+          confrontoSeguradoras[segNome] = { totalServicos: 0, totalRecebido: 0, diferenca: 0, itens: [] };
+        }
+        confrontoSeguradoras[segNome].totalServicos += valor;
+        confrontoSeguradoras[segNome].itens.push({
+          date: sDate,
           motorista: s.motoristaNome || '—',
           quemRecebe: `Faturado ${segNome}`,
           descricao: s.detalhesVeiculo || s.placaVeiculo || 'Serviço',
@@ -548,10 +556,44 @@ export default function Dashboard() {
     }
   });
 
-  const recebidosPorSeguradora: Record<string, number> = {};
+  // 2. Agrupa faturas lançadas como receita no mês para cada seguradora
+  receitas.forEach((r) => {
+    const rDate = new Date(r.dataRecebimento + 'T12:00:00');
+    if (rDate.getMonth() === mesSelecionado && rDate.getFullYear() === anoSelecionado) {
+      if (r.seguradoraNome) {
+        const segNome = r.seguradoraNome;
+        if (!confrontoSeguradoras[segNome]) {
+          confrontoSeguradoras[segNome] = { totalServicos: 0, totalRecebido: 0, diferenca: 0, itens: [] };
+        }
+        confrontoSeguradoras[segNome].totalRecebido += r.valor;
+      }
+    }
+  });
+
+  // 3. Inclui recebimentos legados (faturado-recebido)
   linhas.filter((l) => l.tipo === 'faturado-recebido').forEach((l) => {
     const segNome = l.quemRecebe.replace('Fat Recebida ', '');
-    recebidosPorSeguradora[segNome] = (recebidosPorSeguradora[segNome] || 0) + l.valor;
+    if (!confrontoSeguradoras[segNome]) {
+      confrontoSeguradoras[segNome] = { totalServicos: 0, totalRecebido: 0, diferenca: 0, itens: [] };
+    }
+    confrontoSeguradoras[segNome].totalRecebido += l.valor;
+  });
+
+  // 4. Calcula a diferença (FALTA)
+  let totalServicosSeguradoras = 0;
+  let totalRecebidoSeguradoras = 0;
+  Object.values(confrontoSeguradoras).forEach((item) => {
+    item.diferenca = item.totalServicos - item.totalRecebido;
+    totalServicosSeguradoras += item.totalServicos;
+    totalRecebidoSeguradoras += item.totalRecebido;
+  });
+  const totalFaltaSeguradoras = Math.max(0, totalServicosSeguradoras - totalRecebidoSeguradoras);
+
+  const recebidosPorSeguradora: Record<string, number> = {};
+  Object.entries(confrontoSeguradoras).forEach(([seg, data]) => {
+    if (data.totalRecebido > 0) {
+      recebidosPorSeguradora[seg] = data.totalRecebido;
+    }
   });
 
   // ── RENDER ─────────────────────────────────────────────────────────────────
@@ -602,7 +644,7 @@ export default function Dashboard() {
               <i className="bi bi-chevron-right" />
             </button>
             <a
-              href={`/api/download-relatorio?mes=${mesSelecionado + 1}&ano=${anoSelecionado}`}
+              href={`/api/download-relatorio?ano=${anoSelecionado}`}
               className="btn rounded-pill px-3 fw-bold ms-1"
               style={{ background: 'linear-gradient(135deg, hsl(142 71% 40%), hsl(160 60% 35%))', color: '#fff', border: 'none', height: 44, display: 'flex', alignItems: 'center' }}
             >
@@ -1037,68 +1079,76 @@ export default function Dashboard() {
 
         {/* Painéis de Faturados */}
         <div className="row g-4 mb-4">
-          {/* Faturados Pendentes */}
+          {/* Faturados Pendentes / Confronto de Seguradoras */}
           <div className="col-12 col-lg-6">
             <div className="bg-black bg-opacity-50 border border-secondary rounded-3 p-3 shadow-sm h-100">
               <div className="d-flex align-items-center justify-content-between mb-3">
                 <h3 className="h6 fw-bold m-0 text-light">
-                  <i className="bi bi-clock-history text-warning me-2" />
-                  Faturados / A Receber
+                  <i className="bi bi-shield-check text-warning me-2" />
+                  Confronto de Faturados (Seguradoras)
                 </h3>
-                <span className="badge rounded-pill" style={{ background: 'hsl(38 92% 50%)' }}>
-                  {fmt(totalFaturadosPendentes)}
+                <span
+                  className="badge rounded-pill"
+                  style={{
+                    background: totalFaltaSeguradoras > 0 ? 'hsl(38 92% 50%)' : 'hsl(142 71% 45%)',
+                    color: '#fff',
+                  }}
+                >
+                  {totalFaltaSeguradoras > 0 ? `FALTA: ${fmt(totalFaltaSeguradoras)}` : 'EM DIA'}
                 </span>
               </div>
-              {Object.keys(faturadosPorSeguradora).length > 0 ? (
-                <div className="d-flex flex-column gap-2">
-                  {Object.entries(faturadosPorSeguradora).map(([segNome, { valor, itens }]) => (
-                    <div key={segNome} className="p-3 rounded-3 border border-secondary" style={{ background: 'hsl(220 16% 13%)' }}>
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <div className="d-flex align-items-center gap-2">
-                          <i className="bi bi-shield-check text-warning" />
-                          <span className="fw-bold text-light">Faturado {segNome}</span>
+
+              {Object.keys(confrontoSeguradoras).length > 0 ? (
+                <div className="d-flex flex-column gap-3">
+                  {Object.entries(confrontoSeguradoras).map(([segNome, { totalServicos, totalRecebido, diferenca, itens }]) => {
+                    const estaPendente = diferenca > 0;
+                    return (
+                      <div key={segNome} className="p-3 rounded-3 border border-secondary" style={{ background: 'hsl(220 16% 13%)' }}>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <i className="bi bi-building text-warning" />
+                          <span className="fw-bold text-light">{segNome}</span>
                         </div>
-                        <span className="text-warning fw-bold font-mono">{fmt(valor)}</span>
+
+                        {itens.length > 0 ? (
+                          <div className="py-1">
+                            {itens.map((item) => (
+                              <div key={item.servicoId} className="d-flex align-items-center justify-content-between py-1 border-bottom border-secondary border-opacity-25">
+                                <div className="text-truncate me-2">
+                                  <small className="text-secondary">{item.date.toLocaleDateString('pt-BR')}</small>
+                                  <small className="text-light ms-2">{item.descricao}</small>
+                                  <small className="text-secondary ms-1">({item.motorista})</small>
+                                </div>
+                                <small className="text-warning font-mono fw-bold flex-shrink-0">{fmt(item.valor)}</small>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <small className="text-secondary d-block mb-2">Sem novos guinchos neste mês.</small>
+                        )}
+
+                        <div className="d-flex flex-wrap align-items-center justify-content-end gap-2 mt-2 pt-2 border-top border-secondary">
+                          <span className="small text-secondary">
+                            Serviços: <strong className="text-light font-mono">{fmt(totalServicos)}</strong>
+                          </span>
+                          <span className="small text-secondary">•</span>
+                          <span className="small text-secondary">
+                            Faturado: <strong className="text-success font-mono">{fmt(totalRecebido)}</strong>
+                          </span>
+                          <span
+                            className={`badge ms-1 ${estaPendente ? 'bg-warning text-dark' : 'bg-success text-white'}`}
+                            style={{ fontSize: '0.75rem' }}
+                          >
+                            {estaPendente ? `FALTA: ${fmt(diferenca)}` : 'QUITADO'}
+                          </span>
+                        </div>
                       </div>
-                      {itens.map((item) => (
-                        <div key={item.servicoId} className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between py-2 border-top border-secondary gap-2">
-                          <div className="text-truncate">
-                            <small className="text-secondary">{item.date.toLocaleDateString('pt-BR')}</small>
-                            <small className="text-light ms-2">{item.descricao}</small>
-                            <small className="text-secondary ms-1">({item.motorista})</small>
-                          </div>
-                          <div className="d-flex flex-wrap align-items-center justify-content-end gap-2 mt-2 mt-sm-0">
-                            <small className="text-warning font-mono fw-bold">{fmt(item.valor)}</small>
-                            <fetcher.Form method="post" className="d-flex flex-wrap align-items-center gap-1">
-                              <input type="hidden" name="intent" value="marcar-recebido" />
-                              <input type="hidden" name="servicoId" value={item.servicoId} />
-                              <input 
-                                type="date" 
-                                name="dataRecebimento" 
-                                className="form-control form-control-sm text-light border-secondary" 
-                                style={{ width: '100px', fontSize: '0.65rem', padding: '0.1rem 0.2rem', background: 'hsl(220 16% 18%)', height: '24px' }}
-                                title="Data do recebimento (opcional)"
-                              />
-                              <button
-                                type="submit"
-                                className="btn btn-outline-success btn-sm rounded-pill px-2 py-0 d-flex align-items-center gap-1"
-                                style={{ fontSize: '0.65rem', height: '24px' }}
-                                disabled={fetcher.state !== 'idle'}
-                                title="Marcar como recebido"
-                              >
-                                <i className="bi bi-check-lg" /> Recebido
-                              </button>
-                            </fetcher.Form>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-center text-secondary py-4 mb-0">
                   <i className="bi bi-check-circle" style={{ fontSize: '1.5rem' }} />
-                  <br />Sem faturados pendentes neste mês.
+                  <br />Sem serviços de seguradoras neste mês.
                 </p>
               )}
             </div>
