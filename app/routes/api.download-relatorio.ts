@@ -231,7 +231,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
     const ws = wb.addWorksheet(sheetName);
     ws.views = [{ showGridLines: true }];
 
-    // Larguras de coluna (idênticas à planilha original + 1 coluna extra para Motorista)
+    // Larguras de coluna (idênticas à planilha original + 1 coluna extra para Motorista + nova coluna de valores do sistema)
     ws.columns = [
       { key: 'A', width: 12 },      // Data
       { key: 'B', width: 18 },      // Motorista (coluna extra)
@@ -240,13 +240,14 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
       { key: 'E', width: 13.88 },   // Valor (original Col D)
       { key: 'F', width: 1.75 },    // Separador
       { key: 'G', width: 20.75 },   // Gabriel Summary label (original Col F)
-      { key: 'H', width: 20.75 },   // Gabriel Summary valor (original Col G)
-      { key: 'I', width: 1.75 },    // Separador
-      { key: 'J', width: 20.75 },   // Daniel Summary label (original Col I)
-      { key: 'K', width: 20.75 },   // Daniel Summary valor (original Col J)
-      { key: 'L', width: 1.75 },    // Separador
-      { key: 'M', width: 33.88 },   // Total label (original Col L)
-      { key: 'N', width: 17 },      // Total valor (original Col M)
+      { key: 'H', width: 20.75 },   // Gabriel Summary valor Excel (original Col G)
+      { key: 'I', width: 20.75 },   // Gabriel Summary valor Sistema (NOVA)
+      { key: 'J', width: 1.75 },    // Separador
+      { key: 'K', width: 20.75 },   // Daniel Summary label (original Col I)
+      { key: 'L', width: 20.75 },   // Daniel Summary valor (original Col J)
+      { key: 'M', width: 1.75 },    // Separador
+      { key: 'N', width: 33.88 },   // Total label (original Col L)
+      { key: 'O', width: 17 },      // Total valor (original Col M)
     ];
 
     // ============ ROW 1: HEADER ============
@@ -263,7 +264,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
       cell.alignment = ALIGN_CENTER;
     });
 
-    // Col G-H: Gabriel header
+    // Col G-I: Gabriel header
     const headerG = headerRow.getCell(7);
     headerG.value = 'Total Gabriel:';
     headerG.font = FONT_HEADER_BOLD;
@@ -272,42 +273,49 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
     headerG.alignment = ALIGN_CENTER;
 
     const headerH = headerRow.getCell(8);
-    headerH.value = 'Valores';
+    headerH.value = 'Valores (Planilha)';
     headerH.font = FONT_HEADER_BOLD;
     headerH.fill = FILL_HEADER_GREEN;
     headerH.border = BORDER_THIN;
     headerH.alignment = ALIGN_CENTER;
 
-    // Col J-K: Daniel header
-    const headerJ = headerRow.getCell(10);
-    headerJ.value = 'Total Daniel:';
-    headerJ.font = FONT_HEADER_BOLD;
-    headerJ.fill = FILL_HEADER_BLUE;
-    headerJ.border = BORDER_THIN;
-    headerJ.alignment = ALIGN_CENTER;
+    const headerI = headerRow.getCell(9);
+    headerI.value = 'Valores (Sistema)';
+    headerI.font = FONT_HEADER_BOLD;
+    headerI.fill = FILL_HEADER_GREEN;
+    headerI.border = BORDER_THIN;
+    headerI.alignment = ALIGN_CENTER;
 
+    // Col K-L: Daniel header (deslocado)
     const headerK = headerRow.getCell(11);
-    headerK.value = 'Valores';
+    headerK.value = 'Total Daniel:';
     headerK.font = FONT_HEADER_BOLD;
-    headerK.fill = FILL_HEADER_GREEN;
+    headerK.fill = FILL_HEADER_BLUE;
     headerK.border = BORDER_THIN;
     headerK.alignment = ALIGN_CENTER;
 
-    // Col M-N: Total geral
-    const headerM = headerRow.getCell(13);
-    headerM.value = 'Valor total (somando e descontando saídas):';
-    headerM.font = FONT_HEADER_BOLD;
-    headerM.fill = FILL_HEADER_BLUE;
-    headerM.border = BORDER_THIN;
-    headerM.alignment = ALIGN_RIGHT;
+    const headerL = headerRow.getCell(12);
+    headerL.value = 'Valores';
+    headerL.font = FONT_HEADER_BOLD;
+    headerL.fill = FILL_HEADER_GREEN;
+    headerL.border = BORDER_THIN;
+    headerL.alignment = ALIGN_CENTER;
 
+    // Col N-O: Total geral (deslocado)
     const headerN = headerRow.getCell(14);
-    headerN.value = { formula: '=SUBTOTAL(109, E2:E1000)' };
-    headerN.font = FONT_BOLD;
-    headerN.fill = FILL_HEADER_GREEN;
+    headerN.value = 'Valor total (somando e descontando saídas):';
+    headerN.font = FONT_HEADER_BOLD;
+    headerN.fill = FILL_HEADER_BLUE;
     headerN.border = BORDER_THIN;
     headerN.alignment = ALIGN_RIGHT;
-    headerN.numFmt = '#,##0;[Red]-#,##0';
+
+    const headerO = headerRow.getCell(15);
+    headerO.value = { formula: '=SUBTOTAL(109, E2:E1000)' };
+    headerO.font = FONT_BOLD;
+    headerO.fill = FILL_HEADER_GREEN;
+    headerO.border = BORDER_THIN;
+    headerO.alignment = ALIGN_RIGHT;
+    headerO.numFmt = '#,##0;[Red]-#,##0';
 
     // ============ DATA ROWS & SUMMARY GENERATION ============
     const faturadosArray = Object.keys(faturadosPorSeg);
@@ -356,7 +364,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         row.getCell(5).border = BORDER_RIGHT_THIN;
       }
 
-      // 2. Resumo Gabriel (Colunas G-H)
+      // 2. Resumo Gabriel (Colunas G-H-I)
       if (r === 2) {
         const cellG = row.getCell(7);
         cellG.value = 'Gabriel';
@@ -369,6 +377,9 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.border = BORDER_THIN;
       } else if (r === 3) {
         const cellG = row.getCell(7);
         cellG.value = 'Gabriel SA';
@@ -381,6 +392,9 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.border = BORDER_THIN;
       } else if (r === 5) {
         const cellG = row.getCell(7);
         cellG.value = 'Google';
@@ -393,6 +407,9 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.border = BORDER_THIN;
       } else if (r === 6) {
         const cellG = row.getCell(7);
         cellG.value = 'Diesel Farid';
@@ -405,45 +422,48 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.border = BORDER_THIN;
       }
 
-      // 3. Resumo Daniel (Colunas J-K)
+      // 3. Resumo Daniel (Colunas K-L - Deslocadas)
       if (r === 2) {
-        const cellJ = row.getCell(10);
-        cellJ.value = 'Daniel';
-        cellJ.font = FONT_DEFAULT;
-        cellJ.border = BORDER_THIN;
-
         const cellK = row.getCell(11);
-        cellK.value = { formula: '=SUMIF($C:$C, J2, $E:$E)' };
+        cellK.value = 'Daniel';
         cellK.font = FONT_DEFAULT;
         cellK.border = BORDER_THIN;
-        cellK.alignment = ALIGN_RIGHT;
-        cellK.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellL = row.getCell(12);
+        cellL.value = { formula: '=SUMIF($C:$C, K2, $E:$E)' };
+        cellL.font = FONT_DEFAULT;
+        cellL.border = BORDER_THIN;
+        cellL.alignment = ALIGN_RIGHT;
+        cellL.numFmt = '#,##0;[Red]-#,##0';
       } else if (r === 3) {
-        const cellJ = row.getCell(10);
-        cellJ.value = 'Daniel SA';
-        cellJ.font = FONT_DEFAULT;
-        cellJ.border = BORDER_THIN;
-
         const cellK = row.getCell(11);
-        cellK.value = { formula: '=SUMIF($C:$C, J3, $E:$E)' };
-        cellK.font = FONT_RED;
+        cellK.value = 'Daniel SA';
+        cellK.font = FONT_DEFAULT;
         cellK.border = BORDER_THIN;
-        cellK.alignment = ALIGN_RIGHT;
-        cellK.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellL = row.getCell(12);
+        cellL.value = { formula: '=SUMIF($C:$C, K3, $E:$E)' };
+        cellL.font = FONT_RED;
+        cellL.border = BORDER_THIN;
+        cellL.alignment = ALIGN_RIGHT;
+        cellL.numFmt = '#,##0;[Red]-#,##0';
       } else if (r === 5) {
-        const cellJ = row.getCell(10);
-        cellJ.value = 'Diesel Dani';
-        cellJ.font = FONT_DEFAULT;
-        cellJ.border = BORDER_THIN;
-
         const cellK = row.getCell(11);
-        cellK.value = { formula: '=SUMIFS($E:$E, $C:$C, "Daniel SA", $D:$D, "Diesel")' };
-        cellK.font = FONT_RED;
+        cellK.value = 'Diesel Dani';
+        cellK.font = FONT_DEFAULT;
         cellK.border = BORDER_THIN;
-        cellK.alignment = ALIGN_RIGHT;
-        cellK.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellL = row.getCell(12);
+        cellL.value = { formula: '=SUMIFS($E:$E, $C:$C, "Daniel SA", $D:$D, "Diesel")' };
+        cellL.font = FONT_RED;
+        cellL.border = BORDER_THIN;
+        cellL.alignment = ALIGN_RIGHT;
+        cellL.numFmt = '#,##0;[Red]-#,##0';
       }
 
       // 4. Faturados & Recebidos headers e tabelas (Rows 10-22)
@@ -457,67 +477,91 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellG.alignment = ALIGN_CENTER;
 
         const cellH = row.getCell(8);
-        cellH.value = 'Valores';
+        cellH.value = 'Valores (Planilha)';
         cellH.font = FONT_BOLD;
         cellH.fill = FILL_HEADER_GREEN;
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_CENTER;
 
-        // Daniel Recebidos Header
-        const cellJ = row.getCell(10);
-        cellJ.value = 'Faturados recebidos';
-        cellJ.font = FONT_BOLD;
-        cellJ.fill = FILL_HEADER_BLUE;
-        cellJ.border = BORDER_THIN;
-        cellJ.alignment = ALIGN_CENTER;
+        const cellI = row.getCell(9);
+        cellI.value = 'Valores (Sistema)';
+        cellI.font = FONT_BOLD;
+        cellI.fill = FILL_HEADER_GREEN;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_CENTER;
 
+        // Daniel Recebidos Header (Deslocado)
         const cellK = row.getCell(11);
-        cellK.value = 'Valores';
+        cellK.value = 'Faturados recebidos';
         cellK.font = FONT_BOLD;
-        cellK.fill = FILL_HEADER_GREEN;
+        cellK.fill = FILL_HEADER_BLUE;
         cellK.border = BORDER_THIN;
         cellK.alignment = ALIGN_CENTER;
+
+        const cellL = row.getCell(12);
+        cellL.value = 'Valores';
+        cellL.font = FONT_BOLD;
+        cellL.fill = FILL_HEADER_GREEN;
+        cellL.border = BORDER_THIN;
+        cellL.alignment = ALIGN_CENTER;
       } else if (r >= 11 && r <= 22) {
         const idx = r - 11;
 
-        // Gabriel Faturados (Col G-H)
+        // Gabriel Faturados (Col G-H-I)
         const cellG = row.getCell(7);
         const cellH = row.getCell(8);
+        const cellI = row.getCell(9);
+
         cellG.font = FONT_DEFAULT;
         cellG.border = BORDER_THIN;
+
         cellH.font = FONT_DEFAULT;
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
 
+        cellI.font = FONT_DEFAULT;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
+
         if (idx < faturadosArray.length) {
           const segName = faturadosArray[idx];
           cellG.value = `Faturado ${segName}`;
-          cellH.value = faturadosPorSeg[segName]; // Valor calculado do backend, pois os serviços estão no mês anterior
+
+          // Se for Janeiro, não temos o mês anterior no mesmo arquivo Excel
+          if (mes === 0) {
+            cellH.value = faturadosPorSeg[segName];
+          } else {
+            const mesAnteriorNome = nomesMeses[mesAnterior] + String(anoAnterior).slice(-2);
+            cellH.value = { formula: `=SUMIF('${mesAnteriorNome}'!$C:$C, G${r}, '${mesAnteriorNome}'!$E:$E)` };
+          }
+          cellI.value = faturadosPorSeg[segName];
         } else {
           cellG.value = '';
           cellH.value = '';
+          cellI.value = '';
         }
 
-        // Daniel Recebidos (Col J-K)
-        const cellJ = row.getCell(10);
+        // Daniel Recebidos (Col K-L - Deslocado)
         const cellK = row.getCell(11);
-        cellJ.font = FONT_DEFAULT;
-        cellJ.border = BORDER_THIN;
+        const cellL = row.getCell(12);
         cellK.font = FONT_DEFAULT;
         cellK.border = BORDER_THIN;
-        cellK.alignment = ALIGN_RIGHT;
-        cellK.numFmt = '#,##0;[Red]-#,##0';
+        cellL.font = FONT_DEFAULT;
+        cellL.border = BORDER_THIN;
+        cellL.alignment = ALIGN_RIGHT;
+        cellL.numFmt = '#,##0;[Red]-#,##0';
 
         if (idx < recebidosArray.length) {
-          cellJ.value = `Fat Recebida ${recebidosArray[idx]}`;
-          cellK.value = { formula: `=SUMIF($C:$C, J${r}, $E:$E)` };
+          cellK.value = `Fat Recebida ${recebidosArray[idx]}`;
+          cellL.value = { formula: `=SUMIF($C:$C, K${r}, $E:$E)` };
         } else {
-          cellJ.value = '';
           cellK.value = '';
+          cellL.value = '';
         }
       } else if (r === 23) {
-        // Gabriel Faturados Total (Col G-H)
+        // Gabriel Faturados Total (Col G-H-I)
         const cellG = row.getCell(7);
         cellG.value = 'A receber de fatura';
         cellG.font = FONT_BOLD;
@@ -532,20 +576,28 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
 
-        // Daniel Recebidos Total (Col J-K)
-        const cellJ = row.getCell(10);
-        cellJ.value = 'Faturas recebidas no mês';
-        cellJ.font = FONT_BOLD;
-        cellJ.fill = FILL_HEADER_BLUE;
-        cellJ.border = BORDER_THIN;
+        const cellI = row.getCell(9);
+        cellI.value = { formula: '=SUM(I11:I22)' };
+        cellI.font = FONT_BOLD;
+        cellI.fill = FILL_HEADER_GREEN;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
 
+        // Daniel Recebidos Total (Col K-L - Deslocado)
         const cellK = row.getCell(11);
-        cellK.value = { formula: '=SUM(K11:K22)' };
+        cellK.value = 'Faturas recebidas no mês';
         cellK.font = FONT_BOLD;
-        cellK.fill = FILL_HEADER_GREEN;
+        cellK.fill = FILL_HEADER_BLUE;
         cellK.border = BORDER_THIN;
-        cellK.alignment = ALIGN_RIGHT;
-        cellK.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellL = row.getCell(12);
+        cellL.value = { formula: '=SUM(L11:L22)' };
+        cellL.font = FONT_BOLD;
+        cellL.fill = FILL_HEADER_GREEN;
+        cellL.border = BORDER_THIN;
+        cellL.alignment = ALIGN_RIGHT;
+        cellL.numFmt = '#,##0;[Red]-#,##0';
       }
     }
   }
