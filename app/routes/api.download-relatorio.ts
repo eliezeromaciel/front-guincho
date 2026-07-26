@@ -172,7 +172,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
 
           linhas.push({
             date: dParcela,
-            motorista: '—',
+            motorista: (d.caminhao && caminhaoNomeMap[d.caminhao]) || '—',
             quemRecebe: quemRecebeNome,
             descricao: `${d.descricao}${parcInfo}`,
             valor: -d.valorParcela,
@@ -215,7 +215,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         receitasPorMotorista[l.motorista] = (receitasPorMotorista[l.motorista] || 0) + l.valor;
       }
       if (l.tipo === 'despesa') {
-        const cam = l.quemRecebe.replace(' SA', '');
+        const cam = l.motorista;
         despesasPorCaminhao[cam] = (despesasPorCaminhao[cam] || 0) + Math.abs(l.valor);
       }
       if (l.tipo === 'faturado-recebido') {
@@ -325,46 +325,69 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
       right: { style: 'thin' as const, color: { argb: COLORS.black } },
     };
 
-    const maxRows = Math.max(linhas.length + 1, 23);
+    // 1. Escrever lançamentos nas Colunas A-E
+    let rLaunches = 2;
+    for (let i = 0; i < linhas.length; i++) {
+      const l = linhas[i];
+      const row = ws.getRow(rLaunches);
+      const isNegative = l.valor < 0;
+
+      const cellA = row.getCell(1);
+      cellA.value = l.date;
+      cellA.numFmt = 'DD/MM/YYYY';
+      cellA.font = FONT_DEFAULT;
+      cellA.alignment = ALIGN_CENTER;
+
+      const cellB = row.getCell(2);
+      cellB.value = l.motorista;
+      cellB.font = FONT_DEFAULT;
+
+      const cellC = row.getCell(3);
+      cellC.value = l.quemRecebe;
+      cellC.font = FONT_DEFAULT;
+
+      const cellD = row.getCell(4);
+      cellD.value = l.descricao;
+      cellD.font = FONT_DEFAULT;
+
+      const cellE = row.getCell(5);
+      cellE.value = l.valor;
+      cellE.numFmt = '#,##0;[Red]-#,##0';
+      cellE.font = isNegative ? FONT_RED : FONT_DEFAULT;
+      cellE.alignment = ALIGN_RIGHT;
+      cellE.border = BORDER_RIGHT_THIN;
+
+      // Se for o último lançamento do dia, insere a linha verde divisória
+      const nextL = linhas[i + 1];
+      const isLastOfBin = !nextL || 
+        (l.date.getDate() !== nextL.date.getDate() || 
+         l.date.getMonth() !== nextL.date.getMonth() || 
+         l.date.getFullYear() !== nextL.date.getFullYear());
+
+      if (isLastOfBin) {
+        rLaunches++;
+        const greenRow = ws.getRow(rLaunches);
+        for (let c = 1; c <= 5; c++) {
+          const cell = greenRow.getCell(c);
+          cell.fill = FILL_HEADER_GREEN;
+        }
+        greenRow.getCell(5).border = BORDER_RIGHT_THIN;
+      }
+      rLaunches++;
+    }
+
+    // 2. Preencher painéis de resumo nas colunas G-O
+    const maxRows = Math.max(rLaunches - 1, 29);
 
     for (let r = 2; r <= maxRows; r++) {
       const row = ws.getRow(r);
 
-      // 1. Escrever lançamentos (Colunas A-E)
-      if (r - 2 < linhas.length) {
-        const l = linhas[r - 2];
-        const isNegative = l.valor < 0;
-
-        const cellA = row.getCell(1);
-        cellA.value = l.date;
-        cellA.numFmt = 'DD/MM/YYYY';
-        cellA.font = FONT_DEFAULT;
-        cellA.alignment = ALIGN_CENTER;
-
-        const cellB = row.getCell(2);
-        cellB.value = l.motorista;
-        cellB.font = FONT_DEFAULT;
-
-        const cellC = row.getCell(3);
-        cellC.value = l.quemRecebe;
-        cellC.font = FONT_DEFAULT;
-
-        const cellD = row.getCell(4);
-        cellD.value = l.descricao;
-        cellD.font = FONT_DEFAULT;
-
-        const cellE = row.getCell(5);
-        cellE.value = l.valor;
-        cellE.numFmt = '#,##0;[Red]-#,##0';
-        cellE.font = isNegative ? FONT_RED : FONT_DEFAULT;
-        cellE.alignment = ALIGN_RIGHT;
-        cellE.border = BORDER_RIGHT_THIN;
-      } else {
-        // Manter a linha vertical da tabela estendida até o fim
+      // Manter a linha vertical da tabela de lançamentos estendida até o fim
+      if (r >= rLaunches) {
         row.getCell(5).border = BORDER_RIGHT_THIN;
       }
 
-      // 2. Resumo Gabriel (Colunas G-H-I)
+      // 2.1. Resumo Gabriel (Colunas G-H-I)
       if (r === 2) {
         const cellG = row.getCell(7);
         cellG.value = 'Gabriel';
@@ -379,22 +402,30 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellH.numFmt = '#,##0;[Red]-#,##0';
 
         const cellI = row.getCell(9);
+        cellI.value = receitasPorMotorista['Gabriel'] || 0;
+        cellI.font = FONT_DEFAULT;
         cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
       } else if (r === 3) {
         const cellG = row.getCell(7);
-        cellG.value = 'Gabriel SA';
+        cellG.value = 'Gabriel Despesa';
         cellG.font = FONT_DEFAULT;
         cellG.border = BORDER_THIN;
 
         const cellH = row.getCell(8);
-        cellH.value = { formula: '=SUMIF($C:$C, G3, $E:$E)' };
+        cellH.value = { formula: '=SUMIFS($E:$E, $B:$B, "Gabriel", $E:$E, "<0")' };
         cellH.font = FONT_RED;
         cellH.border = BORDER_THIN;
         cellH.alignment = ALIGN_RIGHT;
         cellH.numFmt = '#,##0;[Red]-#,##0';
 
         const cellI = row.getCell(9);
+        cellI.value = -(despesasPorCaminhao['Gabriel'] || 0);
+        cellI.font = FONT_RED;
         cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
       } else if (r === 5) {
         const cellG = row.getCell(7);
         cellG.value = 'Google';
@@ -427,7 +458,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellI.border = BORDER_THIN;
       }
 
-      // 3. Resumo Daniel (Colunas K-L - Deslocadas)
+      // 2.2. Resumo Daniel (Colunas K-L)
       if (r === 2) {
         const cellK = row.getCell(11);
         cellK.value = 'Daniel';
@@ -442,12 +473,12 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellL.numFmt = '#,##0;[Red]-#,##0';
       } else if (r === 3) {
         const cellK = row.getCell(11);
-        cellK.value = 'Daniel SA';
+        cellK.value = 'Daniel Despesa';
         cellK.font = FONT_DEFAULT;
         cellK.border = BORDER_THIN;
 
         const cellL = row.getCell(12);
-        cellL.value = { formula: '=SUMIF($C:$C, K3, $E:$E)' };
+        cellL.value = { formula: '=SUMIFS($E:$E, $B:$B, "Daniel", $E:$E, "<0")' };
         cellL.font = FONT_RED;
         cellL.border = BORDER_THIN;
         cellL.alignment = ALIGN_RIGHT;
@@ -466,7 +497,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellL.numFmt = '#,##0;[Red]-#,##0';
       }
 
-      // 4. Faturados & Recebidos headers e tabelas (Rows 10-22)
+      // 2.3. Faturados & Recebidos headers e tabelas (Rows 10-23)
       if (r === 10) {
         // Gabriel Faturados Header
         const cellG = row.getCell(7);
@@ -543,7 +574,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
           cellI.value = '';
         }
 
-        // Daniel Recebidos (Col K-L - Deslocado)
+        // Daniel Recebidos (Col K-L)
         const cellK = row.getCell(11);
         const cellL = row.getCell(12);
         cellK.font = FONT_DEFAULT;
@@ -584,7 +615,7 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellI.alignment = ALIGN_RIGHT;
         cellI.numFmt = '#,##0;[Red]-#,##0';
 
-        // Daniel Recebidos Total (Col K-L - Deslocado)
+        // Daniel Recebidos Total (Col K-L)
         const cellK = row.getCell(11);
         cellK.value = 'Faturas recebidas no mês';
         cellK.font = FONT_BOLD;
@@ -598,6 +629,109 @@ const ALIGN_RIGHT = { horizontal: 'right' as const, vertical: 'bottom' as const 
         cellL.border = BORDER_THIN;
         cellL.alignment = ALIGN_RIGHT;
         cellL.numFmt = '#,##0;[Red]-#,##0';
+      }
+
+      // 2.4. Despesas por Caminhão (Rows 25-29)
+      if (r === 25) {
+        const cellG = row.getCell(7);
+        cellG.value = 'Despesas por Caminhão';
+        cellG.font = FONT_BOLD;
+        cellG.fill = FILL_HEADER_BLUE;
+        cellG.border = BORDER_THIN;
+        cellG.alignment = ALIGN_CENTER;
+
+        const cellH = row.getCell(8);
+        cellH.value = 'Valores (Planilha)';
+        cellH.font = FONT_BOLD;
+        cellH.fill = FILL_HEADER_GREEN;
+        cellH.border = BORDER_THIN;
+        cellH.alignment = ALIGN_CENTER;
+
+        const cellI = row.getCell(9);
+        cellI.value = 'Valores (Sistema)';
+        cellI.font = FONT_BOLD;
+        cellI.fill = FILL_HEADER_GREEN;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_CENTER;
+      } else if (r === 26) {
+        const cellG = row.getCell(7);
+        cellG.value = 'Caminhão A (Gabriel)';
+        cellG.font = FONT_DEFAULT;
+        cellG.border = BORDER_THIN;
+
+        const cellH = row.getCell(8);
+        cellH.value = { formula: '=SUMIFS($E:$E, $B:$B, "Gabriel", $E:$E, "<0")' };
+        cellH.font = FONT_RED;
+        cellH.border = BORDER_THIN;
+        cellH.alignment = ALIGN_RIGHT;
+        cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.value = -(despesasPorCaminhao['Gabriel'] || 0);
+        cellI.font = FONT_RED;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
+      } else if (r === 27) {
+        const cellG = row.getCell(7);
+        cellG.value = 'Caminhão B (Daniel)';
+        cellG.font = FONT_DEFAULT;
+        cellG.border = BORDER_THIN;
+
+        const cellH = row.getCell(8);
+        cellH.value = { formula: '=SUMIFS($E:$E, $B:$B, "Daniel", $E:$E, "<0")' };
+        cellH.font = FONT_RED;
+        cellH.border = BORDER_THIN;
+        cellH.alignment = ALIGN_RIGHT;
+        cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.value = -(despesasPorCaminhao['Daniel'] || 0);
+        cellI.font = FONT_RED;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
+      } else if (r === 28) {
+        const cellG = row.getCell(7);
+        cellG.value = 'Caminhão C';
+        cellG.font = FONT_DEFAULT;
+        cellG.border = BORDER_THIN;
+
+        const cellH = row.getCell(8);
+        cellH.value = { formula: '=SUMIFS($E:$E, $B:$B, "Caminhão C", $E:$E, "<0")' };
+        cellH.font = FONT_RED;
+        cellH.border = BORDER_THIN;
+        cellH.alignment = ALIGN_RIGHT;
+        cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.value = -(despesasPorCaminhao['Caminhão C'] || 0);
+        cellI.font = FONT_RED;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
+      } else if (r === 29) {
+        const cellG = row.getCell(7);
+        cellG.value = 'Total Despesas';
+        cellG.font = FONT_BOLD;
+        cellG.fill = FILL_HEADER_BLUE;
+        cellG.border = BORDER_THIN;
+
+        const cellH = row.getCell(8);
+        cellH.value = { formula: '=SUM(H26:H28)' };
+        cellH.font = FONT_BOLD;
+        cellH.fill = FILL_HEADER_GREEN;
+        cellH.border = BORDER_THIN;
+        cellH.alignment = ALIGN_RIGHT;
+        cellH.numFmt = '#,##0;[Red]-#,##0';
+
+        const cellI = row.getCell(9);
+        cellI.value = { formula: '=SUM(I26:I28)' };
+        cellI.font = FONT_BOLD;
+        cellI.fill = FILL_HEADER_GREEN;
+        cellI.border = BORDER_THIN;
+        cellI.alignment = ALIGN_RIGHT;
+        cellI.numFmt = '#,##0;[Red]-#,##0';
       }
     }
   }
